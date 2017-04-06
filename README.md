@@ -23,6 +23,10 @@ print sm
 
 ```
 
+## Installation
+
+To install, use `pip install awssl`.
+
 ## Coverage
 
 The package provides support for version 1.0 of [Amazon Step Language](https://states-language.net/spec.html).
