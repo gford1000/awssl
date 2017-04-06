@@ -18,7 +18,9 @@ class Branch(object):
 
 	def set_start_state(self, StateObject=None):
 		if not StateObject:
-			raise Exception("StateObject must not be None")
+			self._start_state = StateObject
+			return
+
 		if not isinstance(StateObject, StateBase):
 			raise Exception("StateObject must be inherited from StateBase")
 		self._start_state = StateObject
@@ -60,5 +62,7 @@ class Branch(object):
 		return j
 
 	def validate(self):
+		if not self._start_state:
+			raise Exception("StartState of Branch must not be None")
 		for s in self._build_states():
 			s.validate()
