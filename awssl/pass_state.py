@@ -19,7 +19,7 @@ class Pass(StateResult):
 
 	:param Name: [Required] The name of the state within the branch of the state machine
 	:type Name: str
-	:param Comment: [Optiona] A comment describing the intent of this pass state
+	:param Comment: [Optional] A comment describing the intent of this pass state
 	:type Comment: str
 	:param InputPath: [Optional] Filter on the Input information to be passed to the Pass state.  Default is "$", signifying that all the Input information will be provided
 	:type InputPath: str
@@ -42,7 +42,7 @@ class Pass(StateResult):
 
 		:param Name: [Required] The name of the state within the branch of the state machine
 		:type Name: str
-		:param Comment: [Optiona] A comment describing the intent of this pass state
+		:param Comment: [Optional] A comment describing the intent of this pass state
 		:type Comment: str
 		:param InputPath: [Optional] Filter on the Input information to be passed to the Pass state.  Default is "$", signifying that all the Input information will be provided
 		:type InputPath: str

@@ -43,6 +43,8 @@ Which creates the following JSON::
 
    state_machine
    pass_state
+   fail_state
+   succeed_state
 
 
 
