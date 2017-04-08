@@ -42,6 +42,7 @@ Which creates the following JSON::
    :caption: Contents:
 
    state_machine
+   pass_state
 
 
 
