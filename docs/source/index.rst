@@ -41,7 +41,7 @@ Which creates the following JSON::
    :maxdepth: 2
    :caption: Contents:
 
-   code
+   state_machine
 
 
 

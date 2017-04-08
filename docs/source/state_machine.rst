@@ -1,4 +1,4 @@
-Documentation for the Code
+StateMachine
 **************************
 
 .. automodule:: awssl
