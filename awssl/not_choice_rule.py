@@ -1,4 +1,4 @@
-from .comparison import Comparison
+from .comparison import Comparison as ComparisonObject
 from .state_base import StateBase
 
 class NotChoiceRule(object):
@@ -18,7 +18,7 @@ class NotChoiceRule(object):
 	def set_comparison(self, Comparison=None):
 		if not Comparison:
 			raise Exception("Comparison must not be null in a ChoiceRule")
-		if not isinstance(Comparison, Comparison):
+		if not isinstance(Comparison, ComparisonObject):
 			raise Exception("Invalid object - must be of type Comparison")
 		self._comparison = Comparison
 
