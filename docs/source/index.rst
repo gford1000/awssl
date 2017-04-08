@@ -37,6 +37,8 @@ Which creates the following JSON::
 	    "Version": "1.0"
 	}
 
+For more examples see the `awssl git repo <https://github.com/gford1000/awssl>`_ on github.
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:

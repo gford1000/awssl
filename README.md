@@ -27,6 +27,10 @@ print sm
 
 To install, use `pip install awssl`.
 
+## Documentation
+
+Documentation is available at [read the docs](http://awssl.readthedocs.io/en/latest/index.html).
+
 ## Coverage
 
 The package provides support for version 1.0 of [Amazon Step Language](https://states-language.net/spec.html).
