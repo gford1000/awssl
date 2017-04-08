@@ -41,10 +41,12 @@ Which creates the following JSON::
    :maxdepth: 2
    :caption: Contents:
 
-   state_machine
-   pass_state
    fail_state
+   pass_state
+   retrier
+   state_machine
    succeed_state
+   task_state
 
 
 
