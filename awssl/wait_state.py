@@ -127,7 +127,7 @@ class Wait(StateNextEnd):
 			WaitUntilISO8601TimestampPath=self.get_wait_timestamp_path())
 
 		if self.get_next_state():
-			c.set_next_state(NextState=self.get_next_state.clone(NameFormatString))	
+			c.set_next_state(NextState=self.get_next_state().clone(NameFormatString))	
 
 		return c
 
