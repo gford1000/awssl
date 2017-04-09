@@ -28,6 +28,8 @@ the core state types appropriately.  These require particular Lambda functions t
 installed by creating a CloudFormation stack - see the [script](cloudformation/awssl_ext.cform) for details.
 
 ```python
+import awssl
+import awssl.ext
 
 # Declare the Arns for the Lambda functions required by awssl.ext.For
 awssl.ext.set_ext_arns(
