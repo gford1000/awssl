@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 import awssl
 import awssl.ext
 
-def for_state_example():
+def limit_parallel_example(iterations, max_concurrency):
 
 	# Declare the Arns for the Lambda functions required by awssl.ext.For
 	awssl.ext.set_ext_arns(
@@ -16,33 +16,26 @@ def for_state_example():
 		ForFinalizerParallelIterations="arn:aws:lambda:REGION:ACCOUNT_ID:function:FUNCTION_NAME",
 		LimitedParallelConsolidator="arn:aws:lambda:REGION:ACCOUNT_ID:function:FUNCTION_NAME")
 
-	# Create the branch processing to be performed - in this case extraction of the iteration value
+	# Create the branch of concurrent processing to be performed - in this case extraction of the iteration value
 	p = awssl.Pass(Name="Dummy", EndState=True, OutputPath="$.iteration.Iteration")
 
-	# Create 3 For instances to demonstrate the different From/To/Step features
-	# Notice that the same branch definition can be reused across all the For loops
-	s1 = awssl.ext.For(Name="For1", EndState=True,
-		From=0, To=5, Step=1, BranchState=p, ParallelIteration=True)
-
-	s2 = awssl.ext.For(Name="For2", EndState=True,
-		From=0, To=8, Step=2, BranchState=p, ParallelIteration=True)
-
-	s3 = awssl.ext.For(Name="For3", EndState=True,
-		From=-16, To=16, Step=2, BranchState=p)
-
-	# Run the For loops in parallel, to demonstrate there is no interdependencies
-	para = awssl.Parallel(
-		Name="Parallel-Fors",
-		BranchList=[s1,s2,s3],
-		EndState=True)
+	# Sometimes we want to throttle concurrent processing - for example to prevent Lambda function throttling
+	# awssl.ext.LimitedParallel can limit the number of concurrent branches being processed at any given time
+	parallel = awssl.ext.LimitedParallel(
+		Name="LimitedParallel",
+		EndState=True,
+		Iterations=iterations,
+		IteratorPath="$.iteration",
+		MaxConcurrency=max_concurrency,
+		BranchState=p)
 
 	# Construct state machine
 	sm = awssl.StateMachine(Comment="This is a test")
-	sm.set_start_state(para)
+	sm.set_start_state(parallel)
 	return sm
 
 
 if __name__ == "__main__":
-	sm = for_state_example()
+	sm = limit_parallel_example(25, 7)
 	print sm
 

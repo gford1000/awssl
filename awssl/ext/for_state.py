@@ -3,30 +3,34 @@ from ..task_state import Task
 from ..parallel_state import Parallel
 from ..state_base import StateBase
 
-_for_arns = {}
-_INITIALIZER = "Initializer"
-_EXTRACTOR = "Extractor"
-_CONSOLIDATOR = "Consolidator"
-_FINALIZER = "Finalizer"
-_FINALIZER_PARALLEL_ITERATION = "FinalizerConcurrent"
+_ext_arns = {}
+_INITIALIZER = "ForInitializer"
+_EXTRACTOR = "ForExtractor"
+_CONSOLIDATOR = "ForConsolidator"
+_FINALIZER = "ForFinalizer"
+_FINALIZER_PARALLEL_ITERATION = "ForFinalizerConcurrent"
+_LIMITED_PARALLEL_CONSOLIDATOR = "LimitedParallelConsolidator"
 
-def set_for_arns(Initializer=None, Extractor=None, Consolidator=None, Finalizer=None, FinalizerParallelIterations=None):
+def set_ext_arns(ForInitializer=None, ForExtractor=None, ForConsolidator=None, 
+				ForFinalizer=None, ForFinalizerParallelIterations=None,
+				LimitedParallelConsolidator=None):
 	def apply_arg(val, val_name):
 		if not val:
-			raise Exception("set_for_arn: {} must not be None".format(val_name))
+			raise Exception("set_ext_arns: {} must not be None".format(val_name))
 		if not isinstance(val, str):
-			raise Exception("set_for_arn: {} must be a str".format(val_name))
-		_for_arns[val_name] = val
+			raise Exception("set_ext_arns: {} must be a str".format(val_name))
+		_ext_arns[val_name] = val
 
-	for v, n in [(Initializer, _INITIALIZER), (Extractor, _EXTRACTOR), 
-				(Consolidator, _CONSOLIDATOR), (Finalizer, _FINALIZER), 
-				(FinalizerParallelIterations, _FINALIZER_PARALLEL_ITERATION)]:
+	for v, n in [(ForInitializer, _INITIALIZER), (ForExtractor, _EXTRACTOR), 
+				(ForConsolidator, _CONSOLIDATOR), (ForFinalizer, _FINALIZER), 
+				(ForFinalizerParallelIterations, _FINALIZER_PARALLEL_ITERATION),
+				(LimitedParallelConsolidator, _LIMITED_PARALLEL_CONSOLIDATOR) ]:
 		apply_arg(v, n)
 
-def get_for_arn(key):
-	arn = _for_arns.get(key, "")
+def get_ext_arn(key):
+	arn = _ext_arns.get(key, "")
 	if not arn:
-		raise Exception("get_for_arn: Invalid key ({})".format(key))
+		raise Exception("get_ext_arn: Invalid key ({})".format(key))
 	return arn
 
 class For(Parallel):
@@ -63,7 +67,7 @@ class For(Parallel):
 			consolidator = Task(
 				Name="{}-Consolidator-{}".format(state_name, cycle),
 				EndState=False,
-				ResourceArn=get_for_arn(_CONSOLIDATOR))
+				ResourceArn=get_ext_arn(_CONSOLIDATOR))
 
 			injector = Pass(
 				Name="{}-PassTask-{}".format(state_name, cycle),
@@ -78,7 +82,7 @@ class For(Parallel):
 				Name="{}-Extractor-{}".format(state_name, cycle),
 				EndState=False,
 				NextState=injector,
-				ResourceArn=get_for_arn(_EXTRACTOR))
+				ResourceArn=get_ext_arn(_EXTRACTOR))
 
 			input_passer = Pass(
 				Name="{}-PassInput-{}".format(state_name, cycle),
@@ -104,12 +108,12 @@ class For(Parallel):
 		if len(iter_values) > 0:
 			finalizer = Task(
 				Name="{}-Finalizer".format(self.get_name()),
-				ResourceArn=get_for_arn(_FINALIZER),
+				ResourceArn=get_ext_arn(_FINALIZER),
 				EndState=True)
 
 			initializer = Task(
 					Name="{}-Initializer".format(self.get_name()),
-					ResourceArn=get_for_arn(_INITIALIZER),
+					ResourceArn=get_ext_arn(_INITIALIZER),
 					EndState=False)
 
 			cycles = []
@@ -141,7 +145,7 @@ class For(Parallel):
 					BranchList=branch_list)
 
 				initializer.set_next_state(parallel)
-				finalizer.set_resource_arn(ResourceArn=get_for_arn(_FINALIZER_PARALLEL_ITERATION))
+				finalizer.set_resource_arn(ResourceArn=get_ext_arn(_FINALIZER_PARALLEL_ITERATION))
 
 			branch_start_state = initializer
 

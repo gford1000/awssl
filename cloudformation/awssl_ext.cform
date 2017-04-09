@@ -203,6 +203,39 @@
             "Timeout": 60
         },
         "Type": "AWS::Lambda::Function"
+    },
+    "LimitedParallelConsolidator": {
+        "Properties": {
+            "Code": {
+                "ZipFile": {
+                    "Fn::Join": [
+                        "\n",
+                        [
+                            "def lambda_handler(event, context):",
+                            "    \"\"\"",
+                            "    Expecting: [ Input, [ O1, ..., On-1 ], [On, ... On+r ] ]",
+                            "    ",
+                            "    Returns: [ Input, [ O1, ... On+r ] ]",
+                            "    \"\"\"",
+                            "    return [ event[0], event[1] + event[2] ]",
+                            ""
+                        ]
+                    ]
+                }
+             },
+            "Description": "ForFinalizer function for awssl.ext.For",
+            "Handler": "index.lambda_handler",
+            "MemorySize": 128,
+            "Role": {
+                "Fn::GetAtt": [
+                    "LambdaRole",
+                    "Arn"
+                ]
+            },
+            "Runtime": "python2.7",
+            "Timeout": 60
+        },
+        "Type": "AWS::Lambda::Function"
     }
   },
   "Outputs": {
@@ -245,6 +278,14 @@
     "ForFinalizerParallelArn" : {
       "Description" : "The Arn of the ForFinalizerParallel function",
       "Value" : { "Fn::GetAtt" : [ "ForFinalizerParallel", "Arn" ] }
+    },
+    "LimitedParallelConsolidatorName" : {
+      "Description" : "The name of the LimitedParallelConsolidator function",
+      "Value" : { "Ref" : "LimitedParallelConsolidator" }
+    },
+    "LimitedParallelConsolidatorArn" : {
+      "Description" : "The Arn of the LimitedParallelConsolidator function",
+      "Value" : { "Fn::GetAtt" : [ "LimitedParallelConsolidator", "Arn" ] }
     }
   }
 }
