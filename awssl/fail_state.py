@@ -96,3 +96,28 @@ class Fail(StateBase):
 			raise Exception("ErrorCause must be a valid string")
 		self._error_cause = ErrorCause
 
+	def clone(self, NameFormatString="{}"):
+		"""
+		Returns a clone of this instance, with the clone named per the NameFormatString, to avoid state name clashes.
+
+		If this instance is not an end state, then the next state will also be cloned, to establish a complete clone
+		of the branch form this instance onwards.
+
+		:param NameFormatString: [Required] The naming template to be applied to generate the name of the new instance.
+		:type NameFormatString: str
+
+		:returns: ``Fail`` -- A new instance of this instance and any other instances in its branch.
+		"""
+		if not NameFormatString:
+			raise Exception("NameFormatString must not be None (step '{}')".format(self.get_name()))
+		if not isinstance(NameFormatString, str):
+			raise Exception("NameFormatString must be a str (step '{}')".format(self.get_name()))
+
+		c = Fail(
+			Name=NameFormatString.format(self.get_name()),
+			Comment=self.get_comment(),
+			ErrorName=self.get_error_name(),
+			ErrorCause=self.get_error_cause())
+
+		return c
+

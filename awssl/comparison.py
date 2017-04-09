@@ -73,3 +73,14 @@ class Comparison(object):
 			"Variable" : self.get_variable(),
 			self.get_comparator() : self.get_value()
 		}
+
+	def clone(self):
+		"""
+		Returns a clone of this instance.
+
+		:returns: ``Comparison`` -- A new instance of this instance
+		"""
+		return Comparison(
+			Variable=self.get_variable(),
+			Comparator=self.get_comparator(),
+			Value=self.get_value())

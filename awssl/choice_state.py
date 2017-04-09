@@ -15,7 +15,7 @@ class Choice(StateInputOutput):
 	"""
 	def __init__(self, Name="", Comment="", InputPath="$", OutputPath="$", ChoiceList=[], Default=None):
 		super(Choice, self).__init__(Name=Name, Type="Choice", Comment=Comment, InputPath=InputPath, OutputPath=OutputPath)
-		self._choce_list = []
+		self._choice_list = []
 		self._default = None
 		self.set_choice_list(ChoiceList)
 		self.set_default(Default)
@@ -59,3 +59,33 @@ class Choice(StateInputOutput):
 			j["Default"] = self.get_default().get_name()
 		return j
 
+	def clone(self, NameFormatString="{}"):
+		"""
+		Returns a clone of this instance, with the clone named per the NameFormatString, to avoid state name clashes.
+
+		If this instance is not an end state, then the next state will also be cloned, to establish a complete clone
+		of the branch form this instance onwards.
+
+		:param NameFormatString: [Required] The naming template to be applied to generate the name of the new instance.
+		:type NameFormatString: str
+
+		:returns: ``Choice`` -- A new instance of this instance and any other instances in its branch.
+		"""
+		if not NameFormatString:
+			raise Exception("NameFormatString must not be None (step '{}')".format(self.get_name()))
+		if not isinstance(NameFormatString, str):
+			raise Exception("NameFormatString must be a str (step '{}')".format(self.get_name()))
+
+		c = Choice(
+			Name=NameFormatString.format(self.get_name()),
+			Comment=self.get_comment(),
+			InputPath=self.get_input_path(),
+			OutputPath=self.get_output_path())
+
+		if self.get_default():
+			c.set_default(Default=self.get_default().clone(NameFormatString))	
+
+		if self.get_choice_list():
+			c.set_choice_list(ChoiceList=[ c.clone(NameFormatString) for c in self.get_choice_list() ])
+
+		return c

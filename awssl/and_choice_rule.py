@@ -51,3 +51,29 @@ class AndChoiceRule(object):
 			"And" : l,
 			"Next" : self.get_next_state().get_name()
 		}
+
+	def clone(self, NameFormatString="{}"):
+		"""
+		Returns a clone of this instance.
+
+		The NameFormatString will be used to clone the next state that this Choice Rule will initiate if triggered.
+
+		:param NameFormatString: [Required] The naming template to be applied to generate the name of the next state.
+		:type NameFormatString: str
+
+		:returns: ``AndChoiceRule`` -- A new instance of this instance and any other instances in its branch.
+		"""
+		if not NameFormatString:
+			raise Exception("NameFormatString must not be None (step '{}')".format(self.get_name()))
+		if not isinstance(NameFormatString, str):
+			raise Exception("NameFormatString must be a str (step '{}')".format(self.get_name()))
+
+		c = AndChoiceRule()
+
+		if self.get_comparison_list():
+			c.set_comparison_list(ComparisonList=[ c.clone() for c in self.get_comparison_list() ])
+
+		if self.get_next_state():
+			c.set_next_state(NextState=self.get_next_state().clone(NameFormatString))
+
+		return c

@@ -89,7 +89,7 @@ class Wait(StateNextEnd):
 		self._reset_waits()
 		self._wait_timestamp = WaitUntilISO8601Timestamp
 
-	def set_wait_timestamp_path(self):
+	def get_wait_timestamp_path(self):
 		return self._wait_timestamp_path
 
 	def set_wait_timestamp_path(self, WaitUntilISO8601TimestampPath=None):
@@ -98,4 +98,36 @@ class Wait(StateNextEnd):
 		self._reset_waits()
 		self._wait_timestamp_path = WaitUntilISO8601TimestampPath
 
+	def clone(self, NameFormatString="{}"):
+		"""
+		Returns a clone of this instance, with the clone named per the NameFormatString, to avoid state name clashes.
+
+		If this instance is not an end state, then the next state will also be cloned, to establish a complete clone
+		of the branch form this instance onwards.
+
+		:param NameFormatString: [Required] The naming template to be applied to generate the name of the new instance.
+		:type NameFormatString: str
+
+		:returns: ``Wait`` -- A new instance of this instance and any other instances in its branch.
+		"""
+		if not NameFormatString:
+			raise Exception("NameFormatString must not be None (step '{}')".format(self.get_name()))
+		if not isinstance(NameFormatString, str):
+			raise Exception("NameFormatString must be a str (step '{}')".format(self.get_name()))
+
+		c = Wait(
+			Name=NameFormatString.format(self.get_name()),
+			Comment=self.get_comment(),
+			InputPath=self.get_input_path(),
+			OutputPath=self.get_output_path(),
+			EndState=self.get_end_state(),
+			WaitForSeconds=self.get_wait_seconds(),
+			WaitForSecondsPath=self.get_wait_seconds_path(),
+			WaitUntilISO8601Timestamp=self.get_wait_timestamp(),
+			WaitUntilISO8601TimestampPath=self.get_wait_timestamp_path())
+
+		if self.get_next_state():
+			c.set_next_state(NextState=self.get_next_state.clone(NameFormatString))	
+
+		return c
 
