@@ -8,8 +8,9 @@ _INITIALIZER = "Initializer"
 _EXTRACTOR = "Extractor"
 _CONSOLIDATOR = "Consolidator"
 _FINALIZER = "Finalizer"
+_FINALIZER_PARALLEL_ITERATION = "FinalizerConcurrent"
 
-def set_for_arns(Initializer=None, Extractor=None, Consolidator=None, Finalizer=None):
+def set_for_arns(Initializer=None, Extractor=None, Consolidator=None, Finalizer=None, FinalizerParallelIterations=None):
 	def apply_arg(val, val_name):
 		if not val:
 			raise Exception("set_for_arn: {} must not be None".format(val_name))
@@ -17,7 +18,9 @@ def set_for_arns(Initializer=None, Extractor=None, Consolidator=None, Finalizer=
 			raise Exception("set_for_arn: {} must be a str".format(val_name))
 		_for_arns[val_name] = val
 
-	for v, n in [(Initializer, _INITIALIZER), (Extractor, _EXTRACTOR), (Consolidator, _CONSOLIDATOR), (Finalizer, _FINALIZER)]:
+	for v, n in [(Initializer, _INITIALIZER), (Extractor, _EXTRACTOR), 
+				(Consolidator, _CONSOLIDATOR), (Finalizer, _FINALIZER), 
+				(FinalizerParallelIterations, _FINALIZER_PARALLEL_ITERATION)]:
 		apply_arg(v, n)
 
 def get_for_arn(key):
@@ -32,7 +35,8 @@ class For(Parallel):
 	"""
 
 	def __init__(self, Name=None, Comment="", InputPath="$", OutputPath="$", NextState=None, EndState=None, 
-					ResultPath="$", RetryList=None, CatcherList=None, BranchState=None, From=0, To=0, Step=1, IteratorPath="$.iteration"):
+					ResultPath="$", RetryList=None, CatcherList=None, BranchState=None, From=0, To=0, Step=1, 
+					IteratorPath="$.iteration", ParallelIteration=False):
 		super(For, self).__init__(Name=Name, Comment=Comment, 
 			InputPath=InputPath, OutputPath=OutputPath, NextState=NextState, EndState=EndState, 
 			ResultPath=ResultPath, RetryList=RetryList, CatcherList=CatcherList, BranchList=None)
@@ -41,11 +45,13 @@ class For(Parallel):
 		self._to = 0
 		self._step = 1
 		self._iterator_path = None
+		self._parallel_iteration=False
 		self.set_from(From)
 		self.set_to(To)
 		self.set_step(Step)
 		self.set_iterator_path(IteratorPath)
 		self.set_branch_state(BranchState)
+		self.set_parallel_iteration(ParallelIteration)
 
 	def _build_for_loop(self):
 		"""
@@ -98,23 +104,44 @@ class For(Parallel):
 		if len(iter_values) > 0:
 			finalizer = Task(
 				Name="{}-Finalizer".format(self.get_name()),
-				EndState=True,
-				ResourceArn=get_for_arn(_FINALIZER))
+				ResourceArn=get_for_arn(_FINALIZER),
+				EndState=True)
+
+			initializer = Task(
+					Name="{}-Initializer".format(self.get_name()),
+					ResourceArn=get_for_arn(_INITIALIZER),
+					EndState=False)
 
 			cycles = []
 			for iter_value in iter_values:
 				cycles.append(build_iteration(self.get_name(), len(cycles), self.get_iterator_path(), iter_value))
 
-			for i in range(1, len(cycles)):
-				cycles[i-1]["Consolidator"].set_next_state(cycles[i]["Parallel"])
+			if not self.get_parallel_iteration():
+				# Looping will be sequential
 
-			cycles[len(cycles)-1]["Consolidator"].set_next_state(finalizer)
+				for i in range(1, len(cycles)):
+					cycles[i-1]["Consolidator"].set_next_state(cycles[i]["Parallel"])
 
-			initializer = Task(
-					Name="{}-Initializer".format(self.get_name()),
-					ResourceArn=get_for_arn(_INITIALIZER),
+				cycles[len(cycles)-1]["Consolidator"].set_next_state(finalizer)
+
+				initializer.set_next_state(cycles[0]["Parallel"])
+
+			else:
+				# Looping will be concurrent - assumes all looping is independent
+
+				branch_list = []
+				for cycle in cycles:
+					branch_list.append(cycle["Parallel"])
+					cycle["Consolidator"].set_end_state(True)
+
+				parallel = Parallel(
+					Name="{}-Looper".format(self.get_name()),
 					EndState=False,
-					NextState=cycles[0]["Parallel"])
+					NextState=finalizer,
+					BranchList=branch_list)
+
+				initializer.set_next_state(parallel)
+				finalizer.set_resource_arn(ResourceArn=get_for_arn(_FINALIZER_PARALLEL_ITERATION))
 
 			branch_start_state = initializer
 
@@ -161,6 +188,12 @@ class For(Parallel):
 	def set_iterator_path(self, IteratorPath="$.iteration"):
 		self._iterator_path = IteratorPath
 
+	def get_parallel_iteration(self):
+		return self._parallel_iteration
+
+	def set_parallel_iteration(self, ParallelIteration=False):
+		self._parallel_iteration = ParallelIteration
+
 	def validate(self):
 		self._build_for_loop()
 		super(For, self).validate()
@@ -196,7 +229,8 @@ class For(Parallel):
 			From=self.get_from(),
 			To=self.get_to(),
 			Step=self.get_step(),
-			IteratorPath=self.get_iterator_path())
+			IteratorPath=self.get_iterator_path(),
+			ParallelIteration=self.get_parallel_iteration())
 
 		if self.get_branch_state():
 			c.set_branch_state(BranchState=self.get_branch_state().clone(NameFormatString))

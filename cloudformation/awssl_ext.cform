@@ -168,6 +168,41 @@
             "Timeout": 60
         },
         "Type": "AWS::Lambda::Function"
+    },
+    "ForFinalizerParallel": {
+        "Properties": {
+            "Code": {
+                "ZipFile": {
+                    "Fn::Join": [
+                        "\n",
+                        [
+                            "def lambda_handler(event, context):",
+                            "    \"\"\"",
+                            "    Expects input of the form:",
+                            "    ",
+                            "        [ [ Input, [ O1 ] ], ... [ Input, [On ] ] ]",
+                            "        ",
+                            "    Returns: [ O1, ... On ]",
+                            "",
+                            "    \"\"\"",
+                            "    return [ e[1][0] for e in event ]"
+                        ]
+                    ]
+                }
+             },
+            "Description": "ForFinalizer function for awssl.ext.For",
+            "Handler": "index.lambda_handler",
+            "MemorySize": 128,
+            "Role": {
+                "Fn::GetAtt": [
+                    "LambdaRole",
+                    "Arn"
+                ]
+            },
+            "Runtime": "python2.7",
+            "Timeout": 60
+        },
+        "Type": "AWS::Lambda::Function"
     }
   },
   "Outputs": {
@@ -202,6 +237,14 @@
     "ForFinalizerArn" : {
       "Description" : "The Arn of the ForFinalizer function",
       "Value" : { "Fn::GetAtt" : [ "ForFinalizer", "Arn" ] }
+    },
+    "ForFinalizerParallelName" : {
+      "Description" : "The name of the ForFinalizerParallel function",
+      "Value" : { "Ref" : "ForFinalizerParallel" }
+    },
+    "ForFinalizerParallelArn" : {
+      "Description" : "The Arn of the ForFinalizerParallel function",
+      "Value" : { "Fn::GetAtt" : [ "ForFinalizerParallel", "Arn" ] }
     }
   }
 }

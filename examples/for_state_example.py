@@ -12,7 +12,8 @@ def for_state_example():
 		Initializer="arn:aws:lambda:REGION:ACCOUNT_ID:function:FUNCTION_NAME", 
 		Extractor="arn:aws:lambda:REGION:ACCOUNT_ID:function:FUNCTION_NAME", 
 		Consolidator="arn:aws:lambda:REGION:ACCOUNT_ID:function:FUNCTION_NAME", 
-		Finalizer="arn:aws:lambda:REGION:ACCOUNT_ID:function:FUNCTION_NAME")
+		Finalizer="arn:aws:lambda:REGION:ACCOUNT_ID:function:FUNCTION_NAME",
+		FinalizerParallelIterations="arn:aws:lambda:REGION:ACCOUNT_ID:function:FUNCTION_NAME")
 
 	# Create the branch processing to be performed - in this case extraction of the iteration value
 	p = awssl.Pass(Name="Dummy", EndState=True, OutputPath="$.iteration.Iteration")
@@ -20,10 +21,10 @@ def for_state_example():
 	# Create 3 For instances to demonstrate the different From/To/Step features
 	# Notice that the same branch definition can be reused across all the For loops
 	s1 = awssl.ext.For(Name="For1", EndState=True,
-		From=0, To=5, Step=1, BranchState=p)
+		From=0, To=5, Step=1, BranchState=p, ParallelIteration=True)
 
 	s2 = awssl.ext.For(Name="For2", EndState=True,
-		From=0, To=8, Step=2, BranchState=p)
+		From=0, To=8, Step=2, BranchState=p, ParallelIteration=True)
 
 	s3 = awssl.ext.For(Name="For3", EndState=True,
 		From=-16, To=16, Step=2, BranchState=p)
