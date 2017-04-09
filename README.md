@@ -31,7 +31,7 @@ installed by creating a CloudFormation stack - see the [script](cloudformation/a
 import awssl
 import awssl.ext
 
-# Declare the Arns for the Lambda functions required by awssl.ext.For
+# Declare the Arns for the Lambda functions required by awssl.ext state types
 awssl.ext.set_ext_arns(
 	ForInitializer="arn:aws:lambda:REGION:ACCOUNT_ID:function:FUNCTION_NAME", 
 	ForExtractor="arn:aws:lambda:REGION:ACCOUNT_ID:function:FUNCTION_NAME", 
@@ -48,9 +48,9 @@ p = awssl.Pass(Name="Dummy", EndState=True, OutputPath="$.iteration.Iteration")
 parallel = awssl.ext.LimitedParallel(
 	Name="LimitedParallel",
 	EndState=True,
-	Iterations=iterations,
+	Iterations=100,
 	IteratorPath="$.iteration",
-	MaxConcurrency=max_concurrency,
+	MaxConcurrency=15,
 	BranchState=p)
 
 # Construct state machine
