@@ -39,7 +39,7 @@ class Choice(StateInputOutput):
 		return self._default
 
 	def set_default(self, Default=None):
-		if (not Default) and not isinstance(Default, StateBase):
+		if Default and not isinstance(Default, StateBase):
 			raise Exception("Default for a Choice must reference an instance of StateBase (step '{}')".format(self.get_name()))
 		self._default = Default
 
@@ -80,12 +80,10 @@ class Choice(StateInputOutput):
 			Name=NameFormatString.format(self.get_name()),
 			Comment=self.get_comment(),
 			InputPath=self.get_input_path(),
-			OutputPath=self.get_output_path())
+			OutputPath=self.get_output_path(),
+			ChoiceList=[ c.clone(NameFormatString) for c in self.get_choice_list() ])
 
 		if self.get_default():
 			c.set_default(Default=self.get_default().clone(NameFormatString))	
-
-		if self.get_choice_list():
-			c.set_choice_list(ChoiceList=[ c.clone(NameFormatString) for c in self.get_choice_list() ])
 
 		return c

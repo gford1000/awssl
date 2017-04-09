@@ -58,10 +58,7 @@ class ChoiceRule(object):
 		if not isinstance(NameFormatString, str):
 			raise Exception("NameFormatString must be a str (step '{}')".format(self.get_name()))
 
-		c = ChoiceRule()
-
-		if self.get_comparison():
-			c.set_comparison(Comparison=self.get_comparison().clone())	
+		c = ChoiceRule(Comparison=self.get_comparison().clone())
 
 		if self.get_next_state():
 			c.set_next_state(NextState=self.get_next_state().clone(NameFormatString))
