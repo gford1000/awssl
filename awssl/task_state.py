@@ -91,10 +91,10 @@ class Task(StateRetryCatch):
 			HeartbeatSeconds=self.get_heartbeat_seconds())
 
 		if self.get_retry_list():
-			c.set_retry_list(RetryList=[ r for r in self.get_retry_list() ])
+			c.set_retry_list(RetryList=[ r.clone() for r in self.get_retry_list() ])
 
 		if self.get_catcher_list():
-			c.set_catcher_list(CatcherList=[ c for c in self.get_catcher_list() ])
+			c.set_catcher_list(CatcherList=[ c.clone(NameFormatString) for c in self.get_catcher_list() ])
 
 		if self.get_next_state():
 			c.set_next_state(NextState=self.get_next_state.clone(NameFormatString))	

@@ -167,3 +167,19 @@ class Retrier(object):
 			"MaxAttempts" : self.get_max_attempts(),
 			"BackoffRate" : self.get_backoff_rate()
 		}
+
+	def clone(self):
+		"""
+		Returns a clone of this instance.
+
+		:returns: ``Retrier`` -- A new instance of this instance and any other instances in its branch.
+		"""
+		c = Retrier(
+			IntervalSeconds=self.get_interval_seconds(),
+			MaxAttempts=self.get_max_attempts(),
+			BackoffRate=self.get_backoff_rate())
+
+		if self.get_error_name_list():
+			c.set_error_name_list(ErrorNameList=[ n for n in self.get_error_name_list() ])
+
+		return c

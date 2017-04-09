@@ -45,3 +45,30 @@ class Catcher(object):
 			"ErrorEquals" : self.get_error_name_list(),
 			"Next" : self.get_next_state().get_name()
 		}
+
+	def clone(self, NameFormatString="{}"):
+		"""
+		Returns a clone of this instance.
+
+		If the next state invoked by this catcher is not an end state, then the next state will also be cloned, to establish a complete clone
+		of the branch form this instance onwards.
+
+		:param NameFormatString: [Required] The naming template to be applied to generate the name of next state in the new instance.
+		:type NameFormatString: str
+
+		:returns: ``Catcher`` -- A new instance of this instance and any other instances in its branch.
+		"""
+		if not NameFormatString:
+			raise Exception("NameFormatString must not be None (step '{}')".format(self.get_name()))
+		if not isinstance(NameFormatString, str):
+			raise Exception("NameFormatString must be a str (step '{}')".format(self.get_name()))
+
+		c = Catcher()
+
+		if self.get_error_name_list():
+			c.set_error_name_list(ErrorNameList=[ n for n in self.get_error_name_list() ])
+
+		if self.get_next_state():
+			c.set_next_state(NextState=self.get_next_state.clone(NameFormatString))	
+
+		return c
