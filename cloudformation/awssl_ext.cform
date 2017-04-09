@@ -1,0 +1,207 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Creates Lambda functions required for awssl extensions.",
+  "Parameters": {
+  },
+  "Resources": {
+    "LambdaRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Path": "/",
+        "Policies": [
+          {
+            "PolicyName": "root",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
+                  ],
+                  "Resource": "arn:aws:logs:*:*:*",
+                  "Effect": "Allow"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "ForConsolidator": {
+        "Properties": {
+            "Code": {
+                "ZipFile": {
+                    "Fn::Join": [
+                        "\n",
+                        [
+                            "def lambda_handler(event, context):",
+                            "    \"\"\"",
+                            "    Expects event in the form:",
+                            "        [ [I, [O1, O2, ... On-1], On ]",
+                            "    ",
+                            "    Returns:",
+                            "        [ I, [O1, O2, ... On ]",
+                            "    ",
+                            "    \"\"\"",
+                            "    results = event[0][1]",
+                            "    results.append(event[1])",
+                            "    return [ event[0][0], results ]"
+                        ]
+                    ]
+                }
+            },
+            "Description": "ForConsolidator function for awssl.ext.For",
+            "Handler": "index.lambda_handler",
+            "MemorySize": 128,
+            "Role": {
+                "Fn::GetAtt": [
+                    "LambdaRole",
+                    "Arn"
+                ]
+            },
+            "Runtime": "python2.7",
+            "Timeout": 60
+        },
+        "Type": "AWS::Lambda::Function"
+    },
+    "ForInitializer": {
+        "Properties": {
+            "Code": {
+                "ZipFile": {
+                    "Fn::Join": [
+                        "\n",
+                        [
+                            "def lambda_handler(event, context):",
+                            "    return [event, []]",
+                            ""
+                        ]
+                    ]
+                }
+            },
+            "Description": "ForInitializer function for awssl.ext.For",
+            "Handler": "index.lambda_handler",
+            "MemorySize": 128,
+            "Role": {
+                "Fn::GetAtt": [
+                    "LambdaRole",
+                    "Arn"
+                ]
+            },
+            "Runtime": "python2.7",
+            "Timeout": 60
+        },
+        "Type": "AWS::Lambda::Function"
+    },
+    "ForInputExtractor": {
+        "Properties": {
+            "Code": {
+                "ZipFile": {
+                    "Fn::Join": [
+                        "\n",
+                        [
+                            "def lambda_handler(event, context):",
+                            "    \"\"\"",
+                            "    Expects a list [ InputData, [...] ]",
+                            "    \"\"\"",
+                            "    return event[0]"
+                        ]
+                    ]
+                }
+            },
+            "Description": "ForInputExtractor function for awssl.ext.For",
+            "Handler": "index.lambda_handler",
+            "MemorySize": 128,
+            "Role": {
+                "Fn::GetAtt": [
+                    "LambdaRole",
+                    "Arn"
+                ]
+            },
+            "Runtime": "python2.7",
+            "Timeout": 60
+        },
+        "Type": "AWS::Lambda::Function"
+    },
+    "ForFinalizer": {
+        "Properties": {
+            "Code": {
+                "ZipFile": {
+                    "Fn::Join": [
+                        "\n",
+                        [
+                            "def lambda_handler(event, context):",
+                            "    \"\"\"",
+                            "    Expects a two element list: [ Input, [...] ]",
+                            "    ",
+                            "    Returns the second element",
+                            "    \"\"\"",
+                            "    return event[1]",
+                            ""
+                        ]
+                    ]
+                }
+             },
+            "Description": "ForFinalizer function for awssl.ext.For",
+            "Handler": "index.lambda_handler",
+            "MemorySize": 128,
+            "Role": {
+                "Fn::GetAtt": [
+                    "LambdaRole",
+                    "Arn"
+                ]
+            },
+            "Runtime": "python2.7",
+            "Timeout": 60
+        },
+        "Type": "AWS::Lambda::Function"
+    }
+  },
+  "Outputs": {
+    "ForConsolidatorName" : {
+      "Description" : "The name of the ForConsolidator function",
+      "Value" : { "Ref" : "ForConsolidator" }
+    },
+    "ForConsolidatorArn" : {
+      "Description" : "The Arn of the ForConsolidator function",
+      "Value" : { "Fn::GetAtt" : [ "ForConsolidator", "Arn" ] }
+    },
+    "ForInitializerName" : {
+      "Description" : "The name of the ForInitializer function",
+      "Value" : { "Ref" : "ForInitializer" }
+    },
+    "ForInitializerArn" : {
+      "Description" : "The Arn of the ForInitializer function",
+      "Value" : { "Fn::GetAtt" : [ "ForInitializer", "Arn" ] }
+    },
+    "ForInputExtractorName" : {
+      "Description" : "The name of the ForInputExtractor function",
+      "Value" : { "Ref" : "ForInputExtractor" }
+    },
+    "ForInputExtractorArn" : {
+      "Description" : "The Arn of the ForInputExtractor function",
+      "Value" : { "Fn::GetAtt" : [ "ForInputExtractor", "Arn" ] }
+    },
+    "ForFinalizerName" : {
+      "Description" : "The name of the ForFinalizer function",
+      "Value" : { "Ref" : "ForFinalizer" }
+    },
+    "ForFinalizerArn" : {
+      "Description" : "The Arn of the ForFinalizer function",
+      "Value" : { "Fn::GetAtt" : [ "ForFinalizer", "Arn" ] }
+    }
+  }
+}
