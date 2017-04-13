@@ -7,7 +7,7 @@ import awssl.ext
 
 def branch_retry_parallel_state_example():
 
-	# Create the branch processing to be performed - in this case extraction of the iteration value
+	# Create the branch processing to be performed - in this case returning the name of the StartState
 	p1 = awssl.Pass(Name="Dummy1", EndState=True, ResultAsJSON={"Value": "Dummy1"})
 	p2 = awssl.Pass(Name="Dummy2", EndState=True, ResultAsJSON={"Value": "Dummy2"})
 	p3 = awssl.Pass(Name="Dummy3", EndState=True, ResultAsJSON={"Value": "Dummy3"})
