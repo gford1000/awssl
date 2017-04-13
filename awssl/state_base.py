@@ -2,7 +2,7 @@ class StateBase(object):
 	"""
 	Base class of all possible States within AWS State Language
 
-	Supported types: "Pass", "Task", "Choice", "Wait", "Succeed", "Fail", "Parallel"
+	Supported types: "Pass", "Task", "Choice", "Wait", "Succeed", "Fail", "Parallel", "Ext"
 
 	"""
 
@@ -15,7 +15,7 @@ class StateBase(object):
 			raise Exception("Type must be specified (step '{}'".format(Name))
 		if not isinstance(Type, str):
 			raise Exception("Type must be a string value (step '{}'".format(Name))
-		if not Type in ["Pass", "Task", "Choice", "Wait", "Succeed", "Fail", "Parallel"]:
+		if not Type in ["Pass", "Task", "Choice", "Wait", "Succeed", "Fail", "Parallel", "Ext"]:
 			raise Exception("Type must be one of the allowed types for AWS Step Functions (step '{}'".format(Name))
 		self._type = Type
 		self._name = Name
@@ -47,4 +47,3 @@ class StateBase(object):
 				raise Exception("Comment must be a string value if specified, for step ({})".format(self.get_name()))
 			comment = Comment
 		self._comment = comment
-
