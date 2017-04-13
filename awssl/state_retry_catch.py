@@ -17,6 +17,13 @@ class StateRetryCatch(StateResult):
 		self.set_retry_list(RetryList)
 		self.set_catcher_list(CatcherList)
 
+	def get_child_states(self):
+		states = super(StateRetryCatch, self).get_child_states()
+		if self.get_catcher_list() and len(self.get_catcher_list()) > 0:
+			for catcher in self.get_catcher_list():
+				states = states + catcher.get_next_state().get_child_states()
+		return states
+
 	def validate(self):
 		super(StateRetryCatch, self).validate()
 		if self.get_retry_list():

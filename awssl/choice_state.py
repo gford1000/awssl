@@ -59,6 +59,14 @@ class Choice(StateInputOutput):
 			j["Default"] = self.get_default().get_name()
 		return j
 
+	def get_child_states(self):
+		states = super(Choice, self).get_child_states()
+		for choice in  self.get_choice_list():
+			states = states + choice.get_next_state().get_child_states()
+		if self.get_default():
+			states = states + self.get_default().get_child_states()
+		return states
+
 	def clone(self, NameFormatString="{}"):
 		"""
 		Returns a clone of this instance, with the clone named per the NameFormatString, to avoid state name clashes.

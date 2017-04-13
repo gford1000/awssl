@@ -47,3 +47,7 @@ class StateBase(object):
 				raise Exception("Comment must be a string value if specified, for step ({})".format(self.get_name()))
 			comment = Comment
 		self._comment = comment
+
+	def get_child_states(self):
+		return [self]
+
