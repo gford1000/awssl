@@ -35,12 +35,91 @@ def get_ext_arn(key):
 
 class For(Parallel):
 	"""
-	Models a declared for loop, iterating between From until To, advancing by Step
+	Models the ``For`` extension state.
+
+	The ``For`` state constructs and executes branches for each iterator value in the range [``From``, ``To``), incrementing by ``Step``.
+
+	The same branch is repeatedly executed, with the iterator value injected into the Input data at the location specified by ``IteratorPath``.
+
+	The state supports both retry and catch, so that errors can be handled at the state level.  If retries are specified, then all the iterations
+	will be re-executed.
+
+	Either:
+
+	* ``EndState`` is ``True`` and ``NextState`` must be ``None``
+	* ``EndState`` is ``False`` and ``NextState`` must be a valid instance of a class derived from ``StateBase``.
+
+	:param Name: [Required] The name of the state within the branch of the state machine
+	:type Name: str
+	:param Comment: [Optional] A comment describing the intent of this pass state
+	:type Comment: str
+	:param InputPath: [Optional] Filter on the Input information to be passed to the Pass state.  Default is "$", signifying that all the Input information will be provided
+	:type InputPath: str
+	:param OutputPath: [Optional] Filter on the Output information to be returned from the Pass state.  Default is "$", signifying that all the result information will be provided
+	:type OutputPath: str
+	:param EndState: [Optional] Flag indicating if this state terminates a branch of the state machine.  Defaults to ``False``
+	:type EndState: bool
+	:param NextState: [Optional] Next state to be invoked within this branch.  Must not be ``None`` unless ``EndState`` is ``True``
+	:type NextState: instance of class derived from ``StateBase``
+	:param ResultPath: [Optional] JSONPath indicating where results should be added to the Input.  Defaults to "$", indicating results replace the Input entirely.
+	:type ResultPath: str
+	:param RetryList: [Optional] ``list`` of ``Retrier`` instances corresponding to error states that cause the entire set of branches to be retried
+	:type: RetryList: list of ``Retrier``
+	:param CatcherList: [Optional] ``list`` of ``Catcher`` instances corresponding to error states that can be caught and handled by further states being executed in the ``StateMachine``.
+	:type: CatcherList: list of ``Catcher``
+	:param BranchState: [Required] The starting ``StateBase`` instance of the branch to be executed on each iteration of the ``For`` loop
+	:type BranchState: ``StateBase``
+	:param From: [Required] The starting value of the iteration.  Must be an integer or float
+	:type From: int or float
+	:param To: [Required] The ending value of the iteration.  Must be an integer or float
+	:type To: int or float
+	:param Step: [Required] The incremental value of each iteration.  Must be an integer or float, and cannot be zero.  Default is 1.
+	:type To: int or float
+	:param IteratorPath: [Required] The JSONPath specifying the injection location for the iterator value into the Input data
+	:type IteratorPath: str
+	:param ParallelIteration: [Optional] Whether the ``For`` branches can be run concurrently or must be executed sequentially.  Default is sequential.
+	:type ParallelIteration: bool
+
 	"""
 
 	def __init__(self, Name=None, Comment="", InputPath="$", OutputPath="$", NextState=None, EndState=None, 
 					ResultPath="$", RetryList=None, CatcherList=None, BranchState=None, From=0, To=0, Step=1, 
 					IteratorPath="$.iteration", ParallelIteration=False):
+		"""
+		Initializer for the ``For`` class
+
+		:param Name: [Required] The name of the state within the branch of the state machine
+		:type Name: str
+		:param Comment: [Optional] A comment describing the intent of this pass state
+		:type Comment: str
+		:param InputPath: [Optional] Filter on the Input information to be passed to the Pass state.  Default is "$", signifying that all the Input information will be provided
+		:type InputPath: str
+		:param OutputPath: [Optional] Filter on the Output information to be returned from the Pass state.  Default is "$", signifying that all the result information will be provided
+		:type OutputPath: str
+		:param EndState: [Optional] Flag indicating if this state terminates a branch of the state machine.  Defaults to ``False``
+		:type EndState: bool
+		:param NextState: [Optional] Next state to be invoked within this branch.  Must not be ``None`` unless ``EndState`` is ``True``
+		:type NextState: instance of class derived from ``StateBase``
+		:param ResultPath: [Optional] JSONPath indicating where results should be added to the Input.  Defaults to "$", indicating results replace the Input entirely.
+		:type ResultPath: str
+		:param RetryList: [Optional] ``list`` of ``Retrier`` instances corresponding to error states that cause the entire set of branches to be retried
+		:type: RetryList: list of ``Retrier``
+		:param CatcherList: [Optional] ``list`` of ``Catcher`` instances corresponding to error states that can be caught and handled by further states being executed in the ``StateMachine``.
+		:type: CatcherList: list of ``Catcher``
+		:param BranchState: [Required] The starting ``StateBase`` instance of the branch to be executed on each iteration of the ``For`` loop
+		:type BranchState: ``StateBase``
+		:param From: [Required] The starting value of the iteration.  Must be an integer or float
+		:type From: int or float
+		:param To: [Required] The ending value of the iteration.  Must be an integer or float
+		:type To: int or float
+		:param Step: [Required] The incremental value of each iteration.  Must be an integer or float, and cannot be zero.  Default is 1.
+		:type To: int or float
+		:param IteratorPath: [Required] The JSONPath specifying the injection location for the iterator value into the Input data
+		:type IteratorPath: str
+		:param ParallelIteration: [Optional] Whether the ``For`` branches can be run concurrently or must be executed sequentially.  Default is sequential.
+		:type ParallelIteration: bool
+
+		"""		
 		super(For, self).__init__(Name=Name, Comment=Comment, 
 			InputPath=InputPath, OutputPath=OutputPath, NextState=NextState, EndState=EndState, 
 			ResultPath=ResultPath, RetryList=RetryList, CatcherList=CatcherList, BranchList=None)
@@ -153,25 +232,58 @@ class For(Parallel):
 		super(For, self).set_output_path(OutputPath="$.[0]")
 
 	def get_from(self):
+		"""
+		Returns the starting value for the ``For`` loop
+
+		:returns: int or float
+		"""
 		return self._from
 
 	def set_from(self, From=0):
+		"""
+		Sets the starting value for the ``For`` loop.  Must be an integer or float.  Default value is zero.
+
+		:param From: [Required] The starting value of the iteration.  
+		:type From: int or float		
+		"""
 		if not isinstance(From, (int, float)):
 			raise Exception("From must be either an int or a float (step '{}')".format(self.get_name()))
 		self._from = From
 
 	def get_to(self):
+		"""
+		Returns the ending value for the ``For`` loop
+
+		:returns: int or float
+		"""
 		return self._to
 
 	def set_to(self, To=0):
+		"""
+		Sets the ending value for the ``For`` loop.  Must be an integer or float.  Default value is zero.
+
+		:param To: [Required] The ending value of the iteration.  
+		:type To: int or float		
+		"""
 		if not isinstance(To, (int, float)):
 			raise Exception("To must be either an int or a float (step '{}')".format(self.get_name()))
 		self._to = To
 
 	def get_step(self):
+		"""
+		Returns the increment value for the ``For`` loop
+
+		:returns: int or float
+		"""
 		return self._step
 
 	def set_step(self, Step=1):
+		"""
+		Sets the increment value for the ``For`` loop.  Must be an integer or float.  Default value is 1.
+
+		:param Step: [Required] The increment value of the iteration.  
+		:type Step: int or float		
+		"""
 		if not isinstance(Step, (int, float)):
 			raise Exception("Step must be either an int or a float (step '{}')".format(self.get_name()))
 		if Step == 0:
@@ -179,30 +291,76 @@ class For(Parallel):
 		self._step = Step
 
 	def get_branch_state(self):
+		"""
+		Returns the starting state of the branch to be executed within the ``For`` loop.
+
+		:returns: ``StateBase``
+		"""
 		return self._branch_state
 
 	def set_branch_state(self, BranchState=None):
+		"""
+		Sets the starting state of the branch to be executed within the ``For`` loop.
+
+		:param BranchState: [Required] The starting ``StateBase`` instance of the branch to be executed on each iteration of the ``For`` loop
+		:type BranchState: ``StateBase``
+
+		"""
 		if BranchState and not isinstance(BranchState, StateBase):
 			raise Exception("BranchState must either be inherited from StateBase (step '{}')".format(self.get_name()))
 		self._branch_state = BranchState
 
 	def get_iterator_path(self):
+		"""
+		Returns the JSON Path of the injection location, into which the loop iterator value will be added, as the Input data is passed to the branch.
+
+		:returns: str
+		"""
 		return self._iterator_path
 
 	def set_iterator_path(self, IteratorPath="$.iteration"):
+		"""
+		Sets the JSON Path of the injection location, into which the loop iterator value will be added, as the Input data is passed to the branch.
+
+		:param IteratorPath: [Required] The JSONPath specifying the injection location for the iterator value into the Input data
+		:type IteratorPath: str
+		"""
 		self._iterator_path = IteratorPath
 
 	def get_parallel_iteration(self):
+		"""
+		Returns whether the ``For`` loop will execute concurrently or sequentially.
+
+		:returns: bool
+		"""
 		return self._parallel_iteration
 
 	def set_parallel_iteration(self, ParallelIteration=False):
+		"""
+		Specifies whether the execution of the ``For`` loop can be performed concurrently, or must be sequential.  Default is sequential.
+
+		:param ParallelIteration: [Optional] Whether the ``For`` branches can be run concurrently or must be executed sequentially.  
+		:type ParallelIteration: bool
+		"""
 		self._parallel_iteration = ParallelIteration
 
 	def validate(self):
+		"""
+		Validates this instance is correctly specified.
+
+		Raises ``Exception`` with details of the error, if the state is incorrectly defined.
+		
+		"""
 		self._build_for_loop()
 		super(For, self).validate()
 
 	def to_json(self):
+		"""
+		Returns the JSON representation of this instance.
+
+		:returns: dict -- The JSON representation
+		
+		"""
 		self._build_for_loop()
 		return super(For, self).to_json()
 
