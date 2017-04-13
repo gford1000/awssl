@@ -1,5 +1,5 @@
-BranchRetryParallel State
-*************************
+Extension: BranchRetryParallel State
+************************************
 
 The ``BranchRetryParallel`` class extends the ``Parallel`` state.
 

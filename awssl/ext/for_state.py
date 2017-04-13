@@ -8,12 +8,33 @@ _INITIALIZER = "ForInitializer"
 _EXTRACTOR = "ForExtractor"
 _CONSOLIDATOR = "ForConsolidator"
 _FINALIZER = "ForFinalizer"
-_FINALIZER_PARALLEL_ITERATION = "ForFinalizerConcurrent"
+_FINALIZER_PARALLEL_ITERATION = "ForFinalizerParallelIterations"
 _LIMITED_PARALLEL_CONSOLIDATOR = "LimitedParallelConsolidator"
 
 def set_ext_arns(ForInitializer=None, ForExtractor=None, ForConsolidator=None, 
 				ForFinalizer=None, ForFinalizerParallelIterations=None,
 				LimitedParallelConsolidator=None):
+	"""
+	Initialises the ``awssl.ext`` package, so that the correct Lambda functions are used in the ``ext`` states.
+
+	The functions are available in the github repo both as individual lambdas or combined in a CloudFormation script for easy deployment.
+
+	All the Arns must be specified or this function will generate an Exception.
+	
+	:param ForInitializer: The Arn of the ForInitializer Lambda function, used by the ``For`` state
+	:type ForInitializer: str
+	:param ForExtractor: The Arn of the ForExtractor Lambda function, used by the ``For`` state
+	:type ForExtractor: str
+	:param ForConsolidator: The Arn of the ForConsolidator Lambda function, used by the ``For`` state
+	:type ForConsolidator: str
+	:param ForFinalizer: The Arn of the ForFinalizer Lambda function, used by the ``For`` state
+	:type ForFinalizer: str
+	:param ForFinalizerParallelIterations: The Arn of the ForFinalizerParallelIterations Lambda function, used by the ``For`` state
+	:type ForFinalizerParallelIterations: str
+	:param LimitedParallelConsolidator: The Arn of the LimitedParallelConsolidator Lambda function, used by the ``LimitedParallel`` state
+	:type LimitedParallelConsolidator: str
+
+	"""
 	def apply_arg(val, val_name):
 		if not val:
 			raise Exception("set_ext_arns: {} must not be None".format(val_name))
@@ -28,10 +49,25 @@ def set_ext_arns(ForInitializer=None, ForExtractor=None, ForConsolidator=None,
 		apply_arg(v, n)
 
 def get_ext_arn(key):
+	"""
+	Returns the value of the Arn associated with the specified key.
+
+	:param key: The key of the Lambda function whose Arn is required
+	:type key: str
+	:returns: str
+	"""
 	arn = _ext_arns.get(key, "")
 	if not arn:
 		raise Exception("get_ext_arn: Invalid key ({})".format(key))
 	return arn
+
+def get_ext_arn_keys():
+	"""
+	Returns the list of keys against which Arns are defined.
+
+	:returns: list
+	"""
+	return _ext_arns.keys()
 
 class For(Parallel):
 	"""

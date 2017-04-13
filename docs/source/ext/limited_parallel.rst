@@ -1,5 +1,5 @@
-LimitedParallel State
-*********************
+Extension: LimitedParallel State
+********************************
 
 The ``LimitedParallel`` class allows concurrent processing, across arbitrary invocations of the same branch, but limited by a maximum
 number of concurrent executions.

@@ -1,5 +1,5 @@
-For State
-*********
+Extension: For State
+********************
 
 The ``For`` state provides a "for" loop, from a starting value to an ending value, incrementing via a defined step.  
 

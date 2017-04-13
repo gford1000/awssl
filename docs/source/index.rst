@@ -56,6 +56,7 @@ For more examples see the `awssl git repo <https://github.com/gford1000/awssl>`_
    ext/branch_retry_parallel
    ext/for_state
    ext/limited_parallel
+   ext/arn_funcs
 
 
 
