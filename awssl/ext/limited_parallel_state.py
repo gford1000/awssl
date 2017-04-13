@@ -7,11 +7,82 @@ from .for_state import For, get_ext_arn, _INITIALIZER, _LIMITED_PARALLEL_CONSOLI
 
 class LimitedParallel(StateRetryCatch):
 	"""
-	Models a throttled Parallel
+	Limited Parallel allows a throttled amount of concurrent processing, constrained by the value of ``MaxConcurrent``.
+
+	Each branch executed is the same, starting at ``BranchState``, and the number of branch executions is specified by ``Iterations``.
+
+	The value of the iterator is passed to each branch, so that ``Task``s in the branch can process appropriately.  The location of the
+	iterator is specified by ``IteratorPath``.
+
+	Either:
+
+	* ``EndState`` is ``True`` and ``NextState`` must be ``None``
+	* ``EndState`` is ``False`` and ``NextState`` must be a valid instance of a class derived from ``StateBase``.
+
+	Output is returned as a ``list`` of the outputs from each branch.
+
+	:param Name: [Required] The name of the state within the branch of the state machine
+	:type Name: str
+	:param Comment: [Optional] A comment describing the intent of this pass state
+	:type Comment: str
+	:param InputPath: [Optional] Filter on the Input information to be passed to the Pass state.  Default is "$", signifying that all the Input information will be provided
+	:type InputPath: str
+	:param OutputPath: [Optional] Filter on the Output information to be returned from the Pass state.  Default is "$", signifying that all the result information will be provided
+	:type OutputPath: str
+	:param EndState: [Optional] Flag indicating if this state terminates a branch of the state machine.  Defaults to ``False``
+	:type EndState: bool
+	:param NextState: [Optional] Next state to be invoked within this branch.  Must not be ``None`` unless ``EndState`` is ``True``
+	:type NextState: instance of class derived from ``StateBase``
+	:param ResultPath: [Optional] JSONPath indicating where results should be added to the Input.  Defaults to "$", indicating results replace the Input entirely.
+	:type ResultPath: str
+	:param RetryList: [Optional] ``list`` of ``Retrier`` instances corresponding to error states that cause the entire set of branches to be retried
+	:type: RetryList: list of ``Retrier``
+	:param CatcherList: [Optional] ``list`` of ``Catcher`` instances corresponding to error states that can be caught and handled by further states being executed in the ``StateMachine``.
+	:type: CatcherList: list of ``Catcher``
+	:param BranchState: [Required] ``StateBase`` instance, providing the starting state for each branch to be run concurrently 
+	:type: BranchState: ``StateBase``
+	:param: Iterations: [Required] The total number of branches to be executed.  Must be larger than zero
+	:type: Iterations: int
+	:param: MaxConcurrency: [Required] The maximum number of branches that are to executed concurrently.  Must be larger than zero
+	:type: MaxConcurrency: int
+	:param: IteratorPath: [Required] The JSONPath in which to inject the iterator value into the Input passed to the branch
+	:type: IteratorPath: str
+
 	"""
 
 	def __init__(self, Name=None, Comment="", InputPath="$", OutputPath="$", NextState=None, EndState=None, 
 					ResultPath="$", RetryList=None, CatcherList=None, BranchState=None, Iterations=0, MaxConcurrency=1, IteratorPath="$.iteration"):
+		"""
+		Initializer Limited Parallel allows a throttled amount of concurrent processing, constrained by the value of ``MaxConcurrent``.
+
+		:param Name: [Required] The name of the state within the branch of the state machine
+		:type Name: str
+		:param Comment: [Optional] A comment describing the intent of this pass state
+		:type Comment: str
+		:param InputPath: [Optional] Filter on the Input information to be passed to the Pass state.  Default is "$", signifying that all the Input information will be provided
+		:type InputPath: str
+		:param OutputPath: [Optional] Filter on the Output information to be returned from the Pass state.  Default is "$", signifying that all the result information will be provided
+		:type OutputPath: str
+		:param EndState: [Optional] Flag indicating if this state terminates a branch of the state machine.  Defaults to ``False``
+		:type EndState: bool
+		:param NextState: [Optional] Next state to be invoked within this branch.  Must not be ``None`` unless ``EndState`` is ``True``
+		:type NextState: instance of class derived from ``StateBase``
+		:param ResultPath: [Optional] JSONPath indicating where results should be added to the Input.  Defaults to "$", indicating results replace the Input entirely.
+		:type ResultPath: str
+		:param RetryList: [Optional] ``list`` of ``Retrier`` instances corresponding to error states that cause the entire set of branches to be retried
+		:type: RetryList: list of ``Retrier``
+		:param CatcherList: [Optional] ``list`` of ``Catcher`` instances corresponding to error states that can be caught and handled by further states being executed in the ``StateMachine``.
+		:type: CatcherList: list of ``Catcher``
+		:param BranchState: [Required] ``StateBase`` instance, providing the starting state for each branch to be run concurrently 
+		:type: BranchState: ``StateBase``
+		:param: Iterations: [Required] The total number of branches to be executed.  Must be larger than zero
+		:type: Iterations: int
+		:param: MaxConcurrency: [Required] The maximum number of branches that are to executed concurrently.  Must be larger than zero
+		:type: MaxConcurrency: int
+		:param: IteratorPath: [Required] The JSONPath in which to inject the iterator value into the Input passed to the branch
+		:type: IteratorPath: str
+
+		"""
 		super(LimitedParallel, self).__init__(Name=Name, Type="Ext", Comment=Comment, 
 			InputPath=InputPath, OutputPath=OutputPath, NextState=NextState, EndState=EndState, 
 			ResultPath=ResultPath, RetryList=RetryList, CatcherList=CatcherList)
@@ -129,17 +200,39 @@ class LimitedParallel(StateRetryCatch):
 		return limited_parallel_processor
 
 	def get_branch_state(self):
+		"""
+		Returns the initial state for the branch processing
+
+		:returns: ``StateBase`` -- The initial state of the branch
+		"""
 		return self._branch_state
 
 	def set_branch_state(self, BranchState=None):
+		"""
+		Set the initial state for the branch processing
+
+		:param BranchState: [Required] ``StateBase`` instance, providing the starting state for each branch to be run concurrently 
+		:type: BranchState: ``StateBase``
+		"""
 		if BranchState and not isinstance(BranchState, StateBase):
 			raise Exception("BranchState must either be inherited from StateBase (step '{}')".format(self.get_name()))
 		self._branch_state = BranchState
 
 	def get_max_concurrency(self):
+		"""
+		Returns the maxiumum number of concurrent branch executions
+
+		:returns: ``int`` -- The maximum number of concurrent branch executions
+		"""
 		return self._max_concurrent
 
 	def set_max_concurrency(self, MaxConcurrency=1):
+		"""
+		Sets the maximum number of concurrent branch executions, and the supplied value must be greater than zero.  Default is sequential processing.
+
+		:param: MaxConcurrency: [Required] The maximum number of branches that are to executed concurrently.  Must be larger than zero
+		:type: MaxConcurrency: int
+		"""
 		if not MaxConcurrency:
 			raise Exception("MaxCurrency must not be None or zero (step '{}')".format(self.get_name()))
 		if not isinstance(MaxConcurrency, int):
@@ -149,9 +242,21 @@ class LimitedParallel(StateRetryCatch):
 		self._max_concurrent = MaxConcurrency
 
 	def get_iterator_path(self):
+		"""
+		Returns the injection JSONPath to be used to add the iterator value into the Input for a branch
+
+		:returns: str -- The JSONPath for iterator value injection
+		"""
 		return self._iterator_path
 
 	def set_iterator_path(self, IteratorPath="$.iteration"):
+		"""
+		Sets the injection JSONPath to use to add the iterator value into the Input for a branch
+
+		:param: IteratorPath: [Required] The JSONPath in which to inject the iterator value into the Input passed to the branch
+		:type: IteratorPath: str
+
+		"""
 		if not IteratorPath:
 			raise Exception("IteratorPath must not be None or empty str (step '{}')".format(self.get_name()))
 		if not isinstance(IteratorPath, str):
@@ -159,9 +264,20 @@ class LimitedParallel(StateRetryCatch):
 		self._iterator_path = IteratorPath
 
 	def get_iterations(self):
+		"""
+		Returns the total number of branch executions to be performed
+
+		:returns: int -- The total number of branch executions to perform
+		"""
 		return self._iterations
 
 	def set_iterations(self, Iterations=0):
+		"""
+		Sets the total number of branch executions to be performed.  Must be larger than zero.
+
+		:param: Iterations: [Required] The total number of branches to be executed.  Must be larger than zero
+		:type: Iterations: int
+		"""
 		if not Iterations:
 			raise Exception("Iterations must not be None or zero (step '{}')".format(self.get_name()))
 		if not isinstance(Iterations, int):
@@ -171,6 +287,12 @@ class LimitedParallel(StateRetryCatch):
 		self._iterations = Iterations
 
 	def validate(self):
+		"""
+		Validates this instance is correctly specified.
+
+		Raises ``Exception`` with details of the error, if the state is incorrectly defined.
+		
+		"""
 		# Ensure basic inputs are ok
 		super(LimitedParallel, self).validate() 
 
@@ -179,6 +301,12 @@ class LimitedParallel(StateRetryCatch):
 		processor.validate()
 
 	def to_json(self):
+		"""
+		Returns the JSON representation of this instance.
+
+		:returns: dict -- The JSON representation
+		
+		"""
 		return self._build().to_json()
 
 	def get_child_states(self):
