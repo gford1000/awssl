@@ -43,6 +43,7 @@ For more examples see the `awssl git repo <https://github.com/gford1000/awssl>`_
    :maxdepth: 2
    :caption: Contents:
 
+   catcher
    fail_state
    pass_state
    parallel_state
