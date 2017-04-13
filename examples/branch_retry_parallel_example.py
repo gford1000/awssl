@@ -14,11 +14,11 @@ def branch_retry_parallel_state_example():
 
 	r = awssl.Retrier(ErrorNameList=["States.ALL"])
 
-	# Run the For loops in parallel, to demonstrate there is no interdependencies
+	# Run the branches in parallel, each having an individual retrier on any error returned
 	para = awssl.ext.BranchRetryParallel(
 		Name="Parallel",
 		BranchList=[p1,p2,p3],
-		#BranchRetryList=[r],
+		BranchRetryList=[r],
 		EndState=True)
 
 	# Construct state machine
