@@ -51,6 +51,7 @@ For more examples see the `awssl git repo <https://github.com/gford1000/awssl>`_
    state_machine
    succeed_state
    task_state
+   wait_state
    ext/branch_retry_parallel
    ext/limited_parallel
 
