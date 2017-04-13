@@ -1,7 +1,7 @@
 from distutils.core import setup
 setup(
   name = 'awssl',
-  packages = ['awssl'], 
+  packages = ['awssl', 'awssl.ext'], 
   version = '0.2',
   description = 'Classes to generate ASL for AWS Step Functions',
   author = 'Geoff Ford',
