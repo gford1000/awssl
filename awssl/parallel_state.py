@@ -4,11 +4,72 @@ from .branch import Branch
 
 class Parallel(StateRetryCatch):
 	"""
-	Models a Parallel state
+	Models the Parallel state.
+
+	Either:
+
+	* ``EndState`` is ``True`` and ``NextState`` must be ``None``
+	* ``EndState`` is ``False`` and ``NextState`` must be a valid instance of a class derived from ``StateBase``.
+
+	Output is returned as a ``list`` of the outputs from each branch.
+
+	:param Name: [Required] The name of the state within the branch of the state machine
+	:type Name: str
+	:param Comment: [Optional] A comment describing the intent of this pass state
+	:type Comment: str
+	:param InputPath: [Optional] Filter on the Input information to be passed to the Pass state.  Default is "$", signifying that all the Input information will be provided
+	:type InputPath: str
+	:param OutputPath: [Optional] Filter on the Output information to be returned from the Pass state.  Default is "$", signifying that all the result information will be provided
+	:type OutputPath: str
+	:param EndState: [Optional] Flag indicating if this state terminates a branch of the state machine.  Defaults to ``False``
+	:type EndState: bool
+	:param NextState: [Optional] Next state to be invoked within this branch.  Must not be ``None`` unless ``EndState`` is ``True``
+	:type NextState: instance of class derived from ``StateBase``
+	:param ResultPath: [Optional] JSONPath indicating where results should be added to the Input.  Defaults to "$", indicating results replace the Input entirely.
+	:type ResultPath: str
+	:param RetryList: [Optional] ``list`` of ``Retrier`` instances corresponding to error states that cause the entire set of branches to be retried
+	:type: RetryList: list of ``Retrier``
+	:param CatcherList: [Optional] ``list`` of ``Catcher`` instances corresponding to error states that can be caught and handled by further states being executed in the ``StateMachine``.
+	:type: CatcherList: list of ``Catcher``
+	:param BranchList: [Required] ``list`` of ``StateBase`` instances, providing the starting states for each branch to be run concurrently 
+	:type: BranchList: list of ``StateBase``
+
 	"""
 
 	def __init__(self, Name=None, Comment="", InputPath="$", OutputPath="$", NextState=None, EndState=None, 
 					ResultPath="$", RetryList=None, CatcherList=None, BranchList=None):
+		"""
+		Initializer for the Parallel state.
+
+		Either:
+
+		* ``EndState`` is ``True`` and ``NextState`` must be ``None``
+		* ``EndState`` is ``False`` and ``NextState`` must be a valid instance of a class derived from ``StateBase``.
+
+		Output is returned as a ``list`` of the outputs from each branch.
+
+		:param Name: [Required] The name of the state within the branch of the state machine
+		:type Name: str
+		:param Comment: [Optional] A comment describing the intent of this pass state
+		:type Comment: str
+		:param InputPath: [Optional] Filter on the Input information to be passed to the Pass state.  Default is "$", signifying that all the Input information will be provided
+		:type InputPath: str
+		:param OutputPath: [Optional] Filter on the Output information to be returned from the Pass state.  Default is "$", signifying that all the result information will be provided
+		:type OutputPath: str
+		:param EndState: [Optional] Flag indicating if this state terminates a branch of the state machine.  Defaults to ``False``
+		:type EndState: bool
+		:param NextState: [Optional] Next state to be invoked within this branch.  Must not be ``None`` unless ``EndState`` is ``True``
+		:type NextState: instance of class derived from ``StateBase``
+		:param ResultPath: [Optional] JSONPath indicating where results should be added to the Input.  Defaults to "$", indicating results replace the Input entirely.
+		:type ResultPath: str
+		:param RetryList: [Optional] ``list`` of ``Retrier`` instances corresponding to error states that cause the entire set of branches to be retried
+		:type: RetryList: list of ``Retrier``
+		:param CatcherList: [Optional] ``list`` of ``Catcher`` instances corresponding to error states that can be caught and handled by further states being executed in the ``StateMachine``.
+		:type: CatcherList: list of ``Catcher``
+		:param BranchList: [Required] ``list`` of ``StateBase`` instances, providing the starting states for each branch to be run concurrently 
+		:type: BranchList: list of ``StateBase``
+
+		"""
 		super(Parallel, self).__init__(Name=Name, Type="Parallel", Comment=Comment, 
 			InputPath=InputPath, OutputPath=OutputPath, NextState=NextState, EndState=EndState, 
 			ResultPath=ResultPath, RetryList=RetryList, CatcherList=CatcherList)
@@ -16,6 +77,9 @@ class Parallel(StateRetryCatch):
 		self.set_branch_list(BranchList)
 
 	def add_branch(self, StartObject=None):
+		"""
+		Adds a branch starting at the specified ``StartObject``, which must be inherited from ``StateBase``.
+		"""
 		if not StartObject:
 			raise Exception("StartObject must not be None for a Branch (step '{}'".format(self.get_name()))
 		if not isinstance(StartObject, StateBase):
@@ -25,6 +89,14 @@ class Parallel(StateRetryCatch):
 		self._branches.append(Branch(StartObject))
 
 	def set_branch_list(self, BranchList=None):
+		"""
+		Sets the list of starting states for each branch to be executed concurrently.
+
+		At least one branch is required for the state to be valid.
+
+		:param BranchList: [Required] ``list`` of ``StateBase`` instances, providing the starting states for each branch to be run concurrently 
+		:type: BranchList: list of ``StateBase``		
+		"""
 		if not BranchList:
 			self._branches = None
 			return
@@ -41,6 +113,12 @@ class Parallel(StateRetryCatch):
 			self.add_branch(o)				
 
 	def validate(self):
+		"""
+		Validates this instance is correctly specified.
+
+		Raises ``Exception`` with details of the error, if the state is incorrectly defined.
+		
+		"""
 		super(Parallel, self).validate()
 
 		if (not self._branches) or len(self._branches) == 0: 
@@ -49,6 +127,12 @@ class Parallel(StateRetryCatch):
 			b.validate()
 
 	def to_json(self):
+		"""
+		Returns the JSON representation of this instance.
+
+		:returns: dict -- The JSON representation
+		
+		"""
 		if (not self._branches) or len(self._branches) == 0: 
 			raise Exception("Parallel state must contain at least one branch (step '{}'".format(self.get_name()))
 

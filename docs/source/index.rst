@@ -45,6 +45,7 @@ For more examples see the `awssl git repo <https://github.com/gford1000/awssl>`_
 
    fail_state
    pass_state
+   parallel_state
    retrier
    state_machine
    succeed_state
