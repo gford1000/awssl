@@ -2,16 +2,17 @@ from ..pass_state import Pass
 from ..task_state import Task 
 from ..parallel_state import Parallel
 from ..state_base import StateBase
+from ..state_retry_catch import StateRetryCatch
 from .for_state import For, get_ext_arn, _INITIALIZER, _LIMITED_PARALLEL_CONSOLIDATOR
 
-class LimitedParallel(Parallel):
+class LimitedParallel(StateRetryCatch):
 	"""
 	Models a throttled Parallel
 	"""
 
 	def __init__(self, Name=None, Comment="", InputPath="$", OutputPath="$", NextState=None, EndState=None, 
 					ResultPath="$", RetryList=None, CatcherList=None, BranchState=None, Iterations=0, MaxConcurrency=1, IteratorPath="$.iteration"):
-		super(LimitedParallel, self).__init__(Name=Name, Comment=Comment, 
+		super(LimitedParallel, self).__init__(Name=Name, Type="Ext", Comment=Comment, 
 			InputPath=InputPath, OutputPath=OutputPath, NextState=NextState, EndState=EndState, 
 			ResultPath=ResultPath, RetryList=RetryList, CatcherList=CatcherList)
 		self._branch_state = None
@@ -23,7 +24,7 @@ class LimitedParallel(Parallel):
 		self.set_iterator_path(IteratorPath)
 		self.set_iterations(Iterations)
 
-	def _build_for_loop(self):
+	def _build(self):
 		"""
 		This does the heavy lifting of declaring the LimitedParallel loop
 		"""
@@ -104,8 +105,28 @@ class LimitedParallel(Parallel):
 		prior_state.set_end_state(False)
 		prior_state.set_next_state(consolidator)
 
+		# Finalizer creates the correct output
+		limited_parallel_finalizer = Pass(
+			Name="{}-Overall_Finalizer".format(self.get_name()),
+			Comment="Creates a list from the list of list of results",
+			OutputPath="$.[0]",
+			EndState=self.get_end_state(),
+			NextState=self.get_next_state())
+
 		# Process in parallel
-		super(LimitedParallel, self).set_branch_list(BranchList=[ initial_state ])
+		limited_parallel_processor = Parallel(
+			Name=self.get_name(),
+			Comment="Processes the branches limited by MaxConcurrent setting",
+			EndState=False,
+			NextState=limited_parallel_finalizer,
+			InputPath=self.get_input_path(),
+			ResultPath=self.get_result_path(),
+			OutputPath=self.get_output_path(),
+			BranchList=[ initial_state ],
+			RetryList=self.get_retry_list(),
+			CatcherList=self.get_catcher_list())
+
+		return limited_parallel_processor
 
 	def get_branch_state(self):
 		return self._branch_state
@@ -150,12 +171,19 @@ class LimitedParallel(Parallel):
 		self._iterations = Iterations
 
 	def validate(self):
-		self._build_for_loop()
-		super(LimitedParallel, self).validate()
+		# Ensure basic inputs are ok
+		super(LimitedParallel, self).validate() 
+
+		# Ensure constructed LimitedParallel is ok
+		processor = self._build()
+		processor.validate()
 
 	def to_json(self):
-		self._build_for_loop()
-		return super(LimitedParallel, self).to_json()
+		return self._build().to_json()
+
+	def get_child_states(self):
+		# Here we are building a branch "on the fly", so do not call super()
+		return self._build().get_child_states()
 
 	def clone(self, NameFormatString="{}"):
 		"""
