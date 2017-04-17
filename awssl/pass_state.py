@@ -79,7 +79,7 @@ class Pass(StateResult):
 		
 		"""
 		j = super(Pass, self).to_json()
-		if self._result:
+		if self._result != None:
 			j["Result"] = self.get_result()
 		return j
 
