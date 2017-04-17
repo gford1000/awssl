@@ -117,12 +117,12 @@ class Catcher(object):
 		if not isinstance(NameFormatString, str):
 			raise Exception("NameFormatString must be a str (step '{}')".format(self.get_name()))
 
-		c = Catcher()
-
+		cloned_error_name_list = None
 		if self.get_error_name_list():
-			c.set_error_name_list(ErrorNameList=[ n for n in self.get_error_name_list() ])
+			cloned_error_name_list = [ n for n in self.get_error_name_list() ]
 
+		cloned_next_state = None
 		if self.get_next_state():
-			c.set_next_state(NextState=self.get_next_state.clone(NameFormatString))	
+			cloned_next_state = self.get_next_state().clone(NameFormatString)
 
-		return c
+		return Catcher(ErrorNameList=cloned_error_name_list, NextState=cloned_next_state)
