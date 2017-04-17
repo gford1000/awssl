@@ -6,7 +6,7 @@ from ..parallel_state import Parallel
 class ParallelWithFinally(StateRetryCatchFinally):
 	"""
 	Models the ``ParallelWithFinally`` state, which allows concurrent processing of branches, with the overall state having
-	a "finally" branch execution after all branches have completed, or when an error is raised that is caught by a ``Catcher``.
+	an optional "finally" branch execution after all branches have completed, or when an error is raised that is caught by a ``Catcher``.
 
 	Either:
 
@@ -33,7 +33,7 @@ class ParallelWithFinally(StateRetryCatchFinally):
 	:type: RetryList: list of ``Retrier``
 	:param CatcherList: [Optional] ``list`` of ``Catcher`` instances corresponding to error states that can be caught and handled by further states being executed in the ``StateMachine``.
 	:type: CatcherList: list of ``Catcher``
-	:param FinallyState: [Required] First state of the finally branch to be invoked
+	:param FinallyState: [Optional] First state of the finally branch to be invoked
 	:type: FinallyState: Derived from ``StateBase``
 	:param BranchList: [Required] ``list`` of ``StateBase`` instances, providing the starting states for each branch to be run concurrently 
 	:type: BranchList: list of ``StateBase``
@@ -70,7 +70,7 @@ class ParallelWithFinally(StateRetryCatchFinally):
 		:type: RetryList: list of ``Retrier``
 		:param CatcherList: [Optional] ``list`` of ``Catcher`` instances corresponding to error states that can be caught and handled by further states being executed in the ``StateMachine``.
 		:type: CatcherList: list of ``Catcher``
-		:param FinallyState: [Required] First state of the finally branch to be invoked
+		:param FinallyState: [Optional] First state of the finally branch to be invoked
 		:type: FinallyState: Derived from ``StateBase``
 		:param BranchList: [Required] ``list`` of ``StateBase`` instances, providing the starting states for each branch to be run concurrently 
 		:type: BranchList: list of ``StateBase``

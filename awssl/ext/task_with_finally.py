@@ -7,7 +7,7 @@ class TaskWithFinally(StateRetryCatchFinally):
 	types of processing.  The Task supports retries and catching of specified errors to provide structured error handling, as well
 	as supporting Timeout for processing as one of those error types.
 
-	As its name suggests, ``TaskWithFinally`` also allows a branch to be executed after a successful completion of the task,
+	As its name suggests, ``TaskWithFinally`` also optionally allows an additional branch to be executed after a successful completion of the task,
 	or if any of the ``Catcher`` s are triggered by an error.  
 
 	Note that the finally branch will not be executed if no ``Catcher`` traps the error, so it is recommended that a ``Catcher`` is
@@ -36,7 +36,7 @@ class TaskWithFinally(StateRetryCatchFinally):
 	:type: RetryList: list of ``Retrier``
 	:param CatcherList: [Optional] ``list`` of ``Catcher`` instances corresponding to error states that can be caught and handled by further states being executed in the ``StateMachine``.
 	:type: CatcherList: list of ``Catcher``
-	:param FinallyState: [Required] First state of the finally branch to be invoked
+	:param FinallyState: [Optional] First state of the finally branch to be invoked
 	:type: FinallyState: Derived from ``StateBase``
 	:param ResourceArn: [Required] The Arn for the ``Lambda`` function or ``Activity`` that the ``Task`` should invoke
 	:type: ResourceArn: str
@@ -71,7 +71,7 @@ class TaskWithFinally(StateRetryCatchFinally):
 		:type: RetryList: list of ``Retrier``
 		:param CatcherList: [Optional] ``list`` of ``Catcher`` instances corresponding to error states that can be caught and handled by further states being executed in the ``StateMachine``.
 		:type: CatcherList: list of ``Catcher``
-		:param FinallyState: [Required] First state of the finally branch to be invoked
+		:param FinallyState: [Optional] First state of the finally branch to be invoked
 		:type: FinallyState: Derived from ``StateBase``
 		:param ResourceArn: [Required] The Arn for the ``Lambda`` function or ``Activity`` that the ``Task`` should invoke
 		:type: ResourceArn: str
