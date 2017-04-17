@@ -1,18 +1,19 @@
 from ..pass_state import Pass 
 from ..parallel_state import Parallel
+from .parallel_with_finally import ParallelWithFinally
 from ..state_base import StateBase
 from ..retrier import Retrier
 
-class BranchRetryParallel(Parallel):
+class BranchRetryParallel(ParallelWithFinally):
 	"""
-	Extends the Parallel state, providing optional retries on each branch separately.
+	Extends the ``ParallelWithFinally`` state, providing optional retries on each branch separately, along with an optional finally branch.
 
 	Either:
 
 	* ``EndState`` is ``True`` and ``NextState`` must be ``None``
 	* ``EndState`` is ``False`` and ``NextState`` must be a valid instance of a class derived from ``StateBase``.
 
-	Output is returned as a ``list`` of the outputs from each branch, as with ``Parallel``.
+	Output is returned as a ``list`` of the outputs from each branch, as with ``ParallelWithFinally``.
 
 	:param Name: [Required] The name of the state within the branch of the state machine
 	:type Name: str
@@ -32,6 +33,8 @@ class BranchRetryParallel(Parallel):
 	:type: RetryList: list of ``Retrier``
 	:param CatcherList: [Optional] ``list`` of ``Catcher`` instances corresponding to error states that can be caught and handled by further states being executed in the ``StateMachine``.
 	:type: CatcherList: list of ``Catcher``
+	:param FinallyState: [Optional] First state of the finally branch to be invoked
+	:type: FinallyState: Derived from ``StateBase``
 	:param BranchList: [Required] ``list`` of ``StateBase`` instances, providing the starting states for each branch to be run concurrently 
 	:type: BranchList: list of ``StateBase``
 	:param BranchRetryList: [Optional] ``list`` of ``Retrier`` instances corresponding to error states that can be retried for each branch
@@ -40,10 +43,10 @@ class BranchRetryParallel(Parallel):
 	"""
 
 	def __init__(self, Name=None, Comment="", InputPath="$", OutputPath="$", NextState=None, EndState=None, 
-					ResultPath="$", RetryList=None, CatcherList=None, BranchList=None, BranchRetryList=None):
+					ResultPath="$", RetryList=None, CatcherList=None, FinallyState=None, BranchList=None, BranchRetryList=None):
 		super(BranchRetryParallel, self).__init__(Name=Name, Comment=Comment, 
 			InputPath=InputPath, OutputPath=OutputPath, NextState=NextState, EndState=EndState, 
-			ResultPath=ResultPath, RetryList=RetryList, CatcherList=CatcherList)
+			ResultPath=ResultPath, RetryList=RetryList, CatcherList=CatcherList, FinallyState=FinallyState)
 		"""
 		Initializer for the ``BranchRetryParallel`` state.
 
@@ -70,26 +73,24 @@ class BranchRetryParallel(Parallel):
 		:type: RetryList: list of ``Retrier``
 		:param CatcherList: [Optional] ``list`` of ``Catcher`` instances corresponding to error states that can be caught and handled by further states being executed in the ``StateMachine``.
 		:type: CatcherList: list of ``Catcher``
+		:param FinallyState: [Optional] First state of the finally branch to be invoked
+		:type: FinallyState: Derived from ``StateBase``
 		:param BranchList: [Required] ``list`` of ``StateBase`` instances, providing the starting states for each branch to be run concurrently 
 		:type: BranchList: list of ``StateBase``
 		:param BranchRetryList: [Optional] ``list`` of ``Retrier`` instances corresponding to error states that can be retried for each branch
 		:type: BranchRetryList: list of ``StateBase``
 
 		"""
-		self._branch_list = None
-		self._branch_retry_list = None
+		self._brp_branch_list = None
+		self._brp_branch_retry_list = None
 		self.set_branch_list(BranchList)
 		self.set_branch_retry_list(BranchRetryList)
 
-	def _build(self):
-		if not self._branch_list:
-			return 
-
+	def _get_underlying_state_no_retry_catch(self, state_name):
 		branch_list = []
-
 		if self.get_branch_retry_list() and len(self.get_branch_retry_list()) > 0:
 			# Wrap each branch in its own retrying Parallel		
-			for b in self._branch_list:
+			for b in self.get_branch_list():
 				final_state = Pass(
 					Name="{}-Finalizer-{}".format(self.get_name(), b.get_name()),
 					Comment="Unpacking of Parallel results from executing '{}'".format(b.get_name()),
@@ -109,8 +110,10 @@ class BranchRetryParallel(Parallel):
 			# Do not add in additional Parallel if no Retriers specified, to save costs/time
 			branch_list = [ b for b in self.get_branch_list() ]
 
-		super(BranchRetryParallel, self).set_branch_list(branch_list)
-
+		return Parallel(
+			Name=state_name,
+			BranchList=branch_list,
+			EndState=True)
 
 	def get_branch_list(self):
 		"""
@@ -118,7 +121,7 @@ class BranchRetryParallel(Parallel):
 
 		:returns: ``list`` of ``StateBase`` instances
 		"""
-		return self._branch_list
+		return self._brp_branch_list
 
 	def set_branch_list(self, BranchList=None):
 		"""
@@ -130,7 +133,7 @@ class BranchRetryParallel(Parallel):
 		:type: BranchList: list of ``StateBase``		
 		"""
 		if not BranchList:
-			self._branch_list = None
+			self._brp_branch_list = None
 			return
 
 		if not isinstance(BranchList, list):
@@ -140,7 +143,7 @@ class BranchRetryParallel(Parallel):
 		for o in BranchList:
 			if not isinstance(o, StateBase):
 				raise Exception("BranchList must contain only subclasses of StateBase (step '{}')".format(self.get_name()))
-		self._branch_list = [ b for b in BranchList ]
+		self._brp_branch_list = [ b for b in BranchList ]
 
 	def get_branch_retry_list(self):
 		"""
@@ -149,7 +152,7 @@ class BranchRetryParallel(Parallel):
 
 		:returns: ``list`` of ``Retrier`` instances
 		"""
-		return self._branch_retry_list
+		return self._brp_branch_retry_list
 
 	def set_branch_retry_list(self, BranchRetryList=None):
 		"""
@@ -162,7 +165,7 @@ class BranchRetryParallel(Parallel):
 
 		"""
 		if not BranchRetryList:
-			self._branch_retry_list = None
+			self._brp_branch_retry_list = None
 			return
 
 		if not isinstance(BranchRetryList, list):
@@ -172,27 +175,7 @@ class BranchRetryParallel(Parallel):
 		for o in BranchRetryList:
 			if not isinstance(o, Retrier):
 				raise Exception("BranchRetryList must contain only instances of Retrier - found '{}' (step '{}')".format(type(o), self.get_name()))
-		self._branch_retry_list = [ r for r in BranchRetryList ]
-
-	def validate(self):
-		"""
-		Validates this instance is correctly specified.
-
-		Raises ``Exception`` with details of the error, if the state machine is incorrectly defined.
-		
-		"""
-		self._build()
-		super(BranchRetryParallel, self).validate()
-
-	def to_json(self):
-		"""
-		Returns the JSON representation of this instance.
-
-		:returns: dict -- The JSON representation
-		
-		"""
-		self._build()
-		return super(BranchRetryParallel, self).to_json()
+		self._brp_branch_retry_list = [ r for r in BranchRetryList ]
 
 	def clone(self, NameFormatString="{}"):
 		"""
@@ -227,5 +210,8 @@ class BranchRetryParallel(Parallel):
 
 		if self.get_next_state():
 			c.set_next_state(NextState=self.get_next_state.clone(NameFormatString))	
+
+		if self.get_finally_state():
+			c.set_finally_state(FinallyState=self.get_finally_state().clone(NameFormatString))
 
 		return c
