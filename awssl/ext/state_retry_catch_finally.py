@@ -17,13 +17,20 @@ class StateRetryCatchFinally(StateRetryCatch):
 			InputPath=InputPath, OutputPath=OutputPath, NextState=NextState, EndState=EndState, 
 			ResultPath=ResultPath, RetryList=RetryList, CatcherList=CatcherList)
 		self._finally_branch = None
+		self._constructed_states = None
 		self.set_finally_branch(FinallyState)
+
+	def _changed(self):
+		self._constructed_states = None
 
 	def _get_underlying_state_no_retry_catch(self, state_name):
 		# Should be implemented by concrete states
 		raise Exception("Concrete state not fully implemented (step '{}')".format(self.get_name()))
 
 	def _srcf_build(self):
+
+		if self._constructed_states:
+			return self._constructed_states
 
 		# Retrieve underlying state
 		s = self._get_underlying_state_no_retry_catch(self.get_name())
@@ -116,7 +123,8 @@ class StateRetryCatchFinally(StateRetryCatch):
 			s.set_end_state(EndState=self.get_end_state())
 			s.set_next_state(NextState=self.get_next_state())
 
-		return s
+		self._constructed_states = s
+		return self._constructed_states
 
 	def get_child_states(self):
 		# Builds a stand alone branch, so return that rather than self

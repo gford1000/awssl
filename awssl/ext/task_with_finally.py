@@ -119,6 +119,7 @@ class TaskWithFinally(StateRetryCatchFinally):
 		if not isinstance(ResourceArn, str):
 			raise Exception("ResourceArn must be a string for TaskWithFinally state (step '{}')".format(self.get_name()))
 		self._resource_arn = ResourceArn
+		self._changed()
 
 	def get_timeout_seconds(self):
 		"""
@@ -143,6 +144,7 @@ class TaskWithFinally(StateRetryCatchFinally):
 			if TimeoutSeconds < 1:
 				raise Exception("TimeoutSeconds must be greater than zero if specified for TaskWithFinally (step '{}')".format(self.get_name()))
 		self._timeout_seconds = TimeoutSeconds
+		self._changed()
 
 	def get_heartbeat_seconds(self):
 		"""
@@ -169,6 +171,7 @@ class TaskWithFinally(StateRetryCatchFinally):
 			if HeartbeatSeconds < 1:
 				raise Exception("HeartbeatSeconds must be greater than zero if specified for TaskWithFinally (step '{}')".format(self.get_name()))
 		self._heartbeat_seconds = HeartbeatSeconds
+		self._changed()
 
 	def clone(self, NameFormatString="{}"):
 		"""

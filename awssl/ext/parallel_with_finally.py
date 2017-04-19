@@ -99,6 +99,7 @@ class ParallelWithFinally(StateRetryCatchFinally):
 		if not self._branches:
 			self._branches = []
 		self._branches.append(Branch(StartObject))
+		self._changed()
 
 	def get_branch_list(self):
 		"""

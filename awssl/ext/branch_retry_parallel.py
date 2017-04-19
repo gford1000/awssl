@@ -134,6 +134,7 @@ class BranchRetryParallel(ParallelWithFinally):
 		"""
 		if not BranchList:
 			self._brp_branch_list = None
+			self._changed()
 			return
 
 		if not isinstance(BranchList, list):
@@ -144,6 +145,7 @@ class BranchRetryParallel(ParallelWithFinally):
 			if not isinstance(o, StateBase):
 				raise Exception("BranchList must contain only subclasses of StateBase (step '{}')".format(self.get_name()))
 		self._brp_branch_list = [ b for b in BranchList ]
+		self._changed()
 
 	def get_branch_retry_list(self):
 		"""
@@ -166,6 +168,7 @@ class BranchRetryParallel(ParallelWithFinally):
 		"""
 		if not BranchRetryList:
 			self._brp_branch_retry_list = None
+			self._changed()
 			return
 
 		if not isinstance(BranchRetryList, list):
@@ -176,6 +179,7 @@ class BranchRetryParallel(ParallelWithFinally):
 			if not isinstance(o, Retrier):
 				raise Exception("BranchRetryList must contain only instances of Retrier - found '{}' (step '{}')".format(type(o), self.get_name()))
 		self._brp_branch_retry_list = [ r for r in BranchRetryList ]
+		self._changed()
 
 	def clone(self, NameFormatString="{}"):
 		"""
