@@ -2,6 +2,8 @@ from ..pass_state import Pass
 from ..task_state import Task 
 from ..parallel_state import Parallel
 from ..state_base import StateBase
+from ..retrier import Retrier
+from .branch_retry_parallel import BranchRetryParallel
 
 _ext_arns = {}
 _INITIALIZER = "ForInitializer"
@@ -105,6 +107,8 @@ class For(Parallel):
 	:type: CatcherList: list of ``Catcher``
 	:param BranchState: [Required] The starting ``StateBase`` instance of the branch to be executed on each iteration of the ``For`` loop
 	:type BranchState: ``StateBase``
+	:param BranchRetryList: [Optional] ``list`` of ``Retrier`` instances corresponding to error states that cause the ``For`` loop iteration to be retried.  This will occur until the number of retries has been exhausted for this iteration, afterwhich state level ``Retrier`` will be triggered if specified
+	:type BranchRetryList: list of ``Retrier``
 	:param From: [Required] The starting value of the iteration.  Must be an integer or float
 	:type From: int or float
 	:param To: [Required] The ending value of the iteration.  Must be an integer or float
@@ -119,8 +123,8 @@ class For(Parallel):
 	"""
 
 	def __init__(self, Name=None, Comment="", InputPath="$", OutputPath="$", NextState=None, EndState=None, 
-					ResultPath="$", RetryList=None, CatcherList=None, BranchState=None, From=0, To=0, Step=1, 
-					IteratorPath="$.iteration", ParallelIteration=False):
+					ResultPath="$", RetryList=None, CatcherList=None, BranchState=None, BranchRetryList=None, 
+					From=0, To=0, Step=1, IteratorPath="$.iteration", ParallelIteration=False):
 		"""
 		Initializer for the ``For`` class
 
@@ -144,6 +148,8 @@ class For(Parallel):
 		:type: CatcherList: list of ``Catcher``
 		:param BranchState: [Required] The starting ``StateBase`` instance of the branch to be executed on each iteration of the ``For`` loop
 		:type BranchState: ``StateBase``
+		:param BranchRetryList: [Optional] ``list`` of ``Retrier`` instances corresponding to error states that cause the ``For`` loop iteration to be retried.  This will occur until the number of retries has been exhausted for this iteration, afterwhich state level ``Retrier`` will be triggered if specified
+		:type BranchRetryList: list of ``Retrier``
 		:param From: [Required] The starting value of the iteration.  Must be an integer or float
 		:type From: int or float
 		:param To: [Required] The ending value of the iteration.  Must be an integer or float
@@ -164,13 +170,15 @@ class For(Parallel):
 		self._to = 0
 		self._step = 1
 		self._iterator_path = None
-		self._parallel_iteration=False
+		self._parallel_iteration = False
+		self._f_branch_retry_list = None
 		self.set_from(From)
 		self.set_to(To)
 		self.set_step(Step)
 		self.set_iterator_path(IteratorPath)
 		self.set_branch_state(BranchState)
 		self.set_parallel_iteration(ParallelIteration)
+		self.set_branch_retry_list(BranchRetryList)
 
 	def _build_for_loop(self):
 		"""
@@ -203,9 +211,10 @@ class For(Parallel):
 				Name="{}-PassInput-{}".format(state_name, cycle),
 				EndState=True)
 
-			parallel = Parallel(
+			parallel = BranchRetryParallel(
 				Name="{}-ForLoopCycle-{}".format(state_name, cycle),
 				BranchList=[input_passer, extractor],
+				BranchRetryList=self.get_branch_retry_list(),
 				EndState=False,
 				NextState=consolidator)
 
@@ -345,6 +354,38 @@ class For(Parallel):
 		if BranchState and not isinstance(BranchState, StateBase):
 			raise Exception("BranchState must either be inherited from StateBase (step '{}')".format(self.get_name()))
 		self._branch_state = BranchState
+
+	def get_branch_retry_list(self):
+		"""
+		Returns the list of ``Retrier`` instances that will be applied separately to each ``For`` branch iteration, allowing failure 
+		in one branch iteration during the ``For`` loop to be retried without having to re-execute all the branches of the ``For``.
+
+		:returns: ``list`` of ``Retrier`` instances
+		"""
+		return self._f_branch_retry_list
+
+	def set_branch_retry_list(self, BranchRetryList=None):
+		"""
+		Sets the list of ``Retrier`` instance to be applied to each of the branch iterations in the ``For``.
+
+		If none are specified, then ``For`` will retry at the state level (if ``Retrier`` are specified)
+
+		:param BranchRetryList: [Optional] ``list`` of ``Retrier`` instances corresponding to error states that can be retried for each branch iteration
+		:type: BranchRetryList: list of ``StateBase``
+
+		"""
+		if not BranchRetryList:
+			self._f_branch_retry_list = None
+			return
+
+		if not isinstance(BranchRetryList, list):
+			raise Exception("BranchRetryList must contain a list of Retrier instances (step '{}')".format(self.get_name()))
+		if len(BranchRetryList) == 0:
+			raise Exception("BranchRetryList must contain a non-empty list of Retrier instances (step '{}')".format(self.get_name()))
+		for o in BranchRetryList:
+			if not isinstance(o, Retrier):
+				raise Exception("BranchRetryList must contain only instances of Retrier - found '{}' (step '{}')".format(type(o), self.get_name()))
+		self._f_branch_retry_list = [ r for r in BranchRetryList ]
 
 	def get_iterator_path(self):
 		"""
