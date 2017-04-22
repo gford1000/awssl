@@ -1,6 +1,7 @@
 from ..pass_state import Pass 
 from ..task_state import Task 
 from ..parallel_state import Parallel
+from ..retrier import Retrier
 from ..state_base import StateBase
 from ..state_retry_catch import StateRetryCatch
 from .for_state import For, get_ext_arn, _INITIALIZER, _LIMITED_PARALLEL_CONSOLIDATOR
@@ -13,6 +14,9 @@ class LimitedParallel(StateRetryCatch):
 
 	The value of the iterator is passed to each branch, so that ``Task``s in the branch can process appropriately.  The location of the
 	iterator is specified by ``IteratorPath``.
+
+	Branch executions have optional ``Retrier`` lists, which allow individual executions to be retried.  In addition, the state also
+	supports retries and catches, but this will result in all branches being re-executed.
 
 	Either:
 
@@ -41,6 +45,8 @@ class LimitedParallel(StateRetryCatch):
 	:type: CatcherList: list of ``Catcher``
 	:param BranchState: [Required] ``StateBase`` instance, providing the starting state for each branch to be run concurrently 
 	:type: BranchState: ``StateBase``
+	:param BranchRetryList: [Optional] ``list`` of ``Retrier`` instances corresponding to error states that cause the ``For`` loop iteration to be retried.  This will occur until the number of retries has been exhausted for this iteration, afterwhich state level ``Retrier`` will be triggered if specified
+	:type BranchRetryList: list of ``Retrier``
 	:param: Iterations: [Required] The total number of branches to be executed.  Must be larger than zero
 	:type: Iterations: int
 	:param: MaxConcurrency: [Required] The maximum number of branches that are to executed concurrently.  Must be larger than zero
@@ -51,7 +57,9 @@ class LimitedParallel(StateRetryCatch):
 	"""
 
 	def __init__(self, Name=None, Comment="", InputPath="$", OutputPath="$", NextState=None, EndState=None, 
-					ResultPath="$", RetryList=None, CatcherList=None, BranchState=None, Iterations=0, MaxConcurrency=1, IteratorPath="$.iteration"):
+					ResultPath="$", RetryList=None, CatcherList=None, 
+					BranchState=None, BranchRetryList=None,
+					Iterations=0, MaxConcurrency=1, IteratorPath="$.iteration"):
 		"""
 		Initializer Limited Parallel allows a throttled amount of concurrent processing, constrained by the value of ``MaxConcurrent``.
 
@@ -75,6 +83,8 @@ class LimitedParallel(StateRetryCatch):
 		:type: CatcherList: list of ``Catcher``
 		:param BranchState: [Required] ``StateBase`` instance, providing the starting state for each branch to be run concurrently 
 		:type: BranchState: ``StateBase``
+		:param BranchRetryList: [Optional] ``list`` of ``Retrier`` instances corresponding to error states that cause the ``For`` loop iteration to be retried.  This will occur until the number of retries has been exhausted for this iteration, afterwhich state level ``Retrier`` will be triggered if specified
+		:type BranchRetryList: list of ``Retrier``
 		:param: Iterations: [Required] The total number of branches to be executed.  Must be larger than zero
 		:type: Iterations: int
 		:param: MaxConcurrency: [Required] The maximum number of branches that are to executed concurrently.  Must be larger than zero
@@ -90,17 +100,19 @@ class LimitedParallel(StateRetryCatch):
 		self._max_concurrent = 1
 		self._iterator_path = None
 		self._iterations = 0
+		self._lp_branch_retry_list = None
 		self.set_branch_state(BranchState)
 		self.set_max_concurrency(MaxConcurrency)
 		self.set_iterator_path(IteratorPath)
 		self.set_iterations(Iterations)
+		self.set_branch_retry_list(BranchRetryList)
 
-	def _build(self):
+	def _lp_build(self):
 		"""
 		This does the heavy lifting of declaring the LimitedParallel loop
 		"""
 
-		def create_states_for_cycle(cycle, iterations, iteration_offset, branch_state, iterator_path, prior_state, state_name):
+		def create_states_for_cycle(cycle, iterations, iteration_offset, branch_state, branch_retry_list, iterator_path, prior_state, state_name):
 
 			for_state = For(Name="{}-For-{}".format(state_name, cycle),
 							EndState=True,
@@ -108,6 +120,7 @@ class LimitedParallel(StateRetryCatch):
 							To=iteration_offset+iterations, 
 							Step=1, 
 							BranchState=branch_state,
+							BranchRetryList=branch_retry_list,
 							IteratorPath=iterator_path, 
 							ParallelIteration=True)
 
@@ -157,7 +170,8 @@ class LimitedParallel(StateRetryCatch):
 			remaining_iterations = remaining_iterations - cycle_iterations
 
 			cycle_initializer, prior_state = create_states_for_cycle(cycle, cycle_iterations, cycle * self.get_max_concurrency(), 
-												self.get_branch_state(), self.get_iterator_path(), prior_state, self.get_name())
+												self.get_branch_state(), self.get_branch_retry_list(),
+												self.get_iterator_path(), prior_state, self.get_name())
 
 			if cycle == 0:
 				initial_state = cycle_initializer
@@ -217,6 +231,38 @@ class LimitedParallel(StateRetryCatch):
 		if BranchState and not isinstance(BranchState, StateBase):
 			raise Exception("BranchState must either be inherited from StateBase (step '{}')".format(self.get_name()))
 		self._branch_state = BranchState
+
+	def get_branch_retry_list(self):
+		"""
+		Returns the list of ``Retrier`` instances that will be applied separately to each branch execution, allowing failure 
+		in one branch iteration during the ``LimitedParallel`` execution to be retried.
+
+		:returns: ``list`` of ``Retrier`` instances
+		"""
+		return self._lp_branch_retry_list
+
+	def set_branch_retry_list(self, BranchRetryList=None):
+		"""
+		Sets the list of ``Retrier`` instance to be applied to each of the branch execution in the ``LimitedParallel``.
+
+		If none are specified, then ``LimitedParallel`` will retry at the state level (if ``Retrier`` are specified)
+
+		:param BranchRetryList: [Optional] ``list`` of ``Retrier`` instances corresponding to error states that can be retried for each branch execution
+		:type: BranchRetryList: list of ``StateBase``
+
+		"""
+		if not BranchRetryList:
+			self._lp_branch_retry_list = None
+			return
+
+		if not isinstance(BranchRetryList, list):
+			raise Exception("BranchRetryList must contain a list of Retrier instances (step '{}')".format(self.get_name()))
+		if len(BranchRetryList) == 0:
+			raise Exception("BranchRetryList must contain a non-empty list of Retrier instances (step '{}')".format(self.get_name()))
+		for o in BranchRetryList:
+			if not isinstance(o, Retrier):
+				raise Exception("BranchRetryList must contain only instances of Retrier - found '{}' (step '{}')".format(type(o), self.get_name()))
+		self._lp_branch_retry_list = [ r for r in BranchRetryList ]
 
 	def get_max_concurrency(self):
 		"""
@@ -297,8 +343,7 @@ class LimitedParallel(StateRetryCatch):
 		super(LimitedParallel, self).validate() 
 
 		# Ensure constructed LimitedParallel is ok
-		processor = self._build()
-		processor.validate()
+		self._lp_build().validate()
 
 	def to_json(self):
 		"""
@@ -307,11 +352,11 @@ class LimitedParallel(StateRetryCatch):
 		:returns: dict -- The JSON representation
 		
 		"""
-		return self._build().to_json()
+		return self._lp_build().to_json()
 
 	def get_child_states(self):
 		# Here we are building a branch "on the fly", so do not call super()
-		return self._build().get_child_states()
+		return self._lp_build().get_child_states()
 
 	def clone(self, NameFormatString="{}"):
 		"""
@@ -343,6 +388,9 @@ class LimitedParallel(StateRetryCatch):
 
 		if self.get_branch_state():
 			c.set_branch_state(BranchState=self.get_branch_state().clone(NameFormatString))
+
+		if self.get_branch_retry_list():
+			c.set_branch_retry_list(BranchRetryList=self.get_branch_retry_list())
 
 		if self.get_retry_list():
 			c.set_retry_list(RetryList=[ r.clone() for r in self.get_retry_list() ])
