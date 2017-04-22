@@ -1,0 +1,18 @@
+{
+    "Comment": "A Hello World example of the Amazon States Language using a Pass state", 
+    "StartAt": "HelloWorld", 
+    "States": {
+        "HelloWorld": {
+            "Comment": "", 
+            "End": true, 
+            "InputPath": "$", 
+            "OutputPath": "$", 
+            "Result": {
+                "Hello": "World!"
+            }, 
+            "ResultPath": "$", 
+            "Type": "Pass"
+        }
+    }, 
+    "Version": "1.0"
+}
