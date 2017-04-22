@@ -62,7 +62,7 @@ def run_tests():
 				if actual_result == expected_result:
 					return (1, 0, None)
 				else:
-					return (0, 1, "{}:\n\tExpected: {}\n\tActual: {}".format(test["Name"], expected_result, actual_result))
+					return (0, 1, "{}:\nExpected:\n---\n{}\n---\nActual:\n---\n{}\n---".format(test["Name"], expected_result, actual_result))
 
 
 			print_msg("\tRunning tests in module '{}'".format(module_tests["File"]))
