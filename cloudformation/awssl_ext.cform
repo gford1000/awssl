@@ -2,6 +2,7 @@
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "Creates Lambda functions required for awssl extensions.",
   "Parameters": {
+
   },
   "Resources": {
     "LambdaRole": {
@@ -74,7 +75,17 @@
                 ]
             },
             "Runtime": "python2.7",
-            "Timeout": 60
+            "Timeout": 60,
+            "Tags": [
+                {
+                    "Key" : "Category",
+                    "Value" : "StepFunction Extensions"
+                },
+                {
+                    "Key" : "Feature",
+                    "Value" : "Extension: For"
+                }
+            ]
         },
         "Type": "AWS::Lambda::Function"
     },
@@ -102,7 +113,17 @@
                 ]
             },
             "Runtime": "python2.7",
-            "Timeout": 60
+            "Timeout": 60,
+            "Tags": [
+                {
+                    "Key" : "Category",
+                    "Value" : "StepFunction Extensions"
+                },
+                {
+                    "Key" : "Feature",
+                    "Value" : "Extension: For"
+                }
+            ]
         },
         "Type": "AWS::Lambda::Function"
     },
@@ -132,7 +153,17 @@
                 ]
             },
             "Runtime": "python2.7",
-            "Timeout": 60
+            "Timeout": 60,
+            "Tags": [
+                {
+                    "Key" : "Category",
+                    "Value" : "StepFunction Extensions"
+                },
+                {
+                    "Key" : "Feature",
+                    "Value" : "Extension: For"
+                }
+            ]
         },
         "Type": "AWS::Lambda::Function"
     },
@@ -165,7 +196,17 @@
                 ]
             },
             "Runtime": "python2.7",
-            "Timeout": 60
+            "Timeout": 60,
+            "Tags": [
+                {
+                    "Key" : "Category",
+                    "Value" : "StepFunction Extensions"
+                },
+                {
+                    "Key" : "Feature",
+                    "Value" : "Extension: For"
+                }
+            ]
         },
         "Type": "AWS::Lambda::Function"
     },
@@ -200,7 +241,17 @@
                 ]
             },
             "Runtime": "python2.7",
-            "Timeout": 60
+            "Timeout": 60,
+            "Tags": [
+                {
+                    "Key" : "Category",
+                    "Value" : "StepFunction Extensions"
+                },
+                {
+                    "Key" : "Feature",
+                    "Value" : "Extension: For"
+                }
+            ]
         },
         "Type": "AWS::Lambda::Function"
     },
@@ -233,10 +284,790 @@
                 ]
             },
             "Runtime": "python2.7",
-            "Timeout": 60
+            "Timeout": 60,
+            "Tags": [
+                {
+                    "Key" : "Category",
+                    "Value" : "StepFunction Extensions"
+                },
+                {
+                    "Key" : "Feature",
+                    "Value" : "Extension: LimitedParallel"
+                }
+            ]
         },
         "Type": "AWS::Lambda::Function"
-    }
+    },
+    "BranchActivity" : {
+        "Type": "AWS::StepFunctions::Activity",
+        "Properties": {
+            "Name": {
+                "Fn::Join": [
+                    "-",
+                    [
+                        { "Ref" : "AWS::StackName" },
+                        "BranchActivity"
+                    ]
+                ]
+            }
+        }
+    },
+    "BranchSNS" : {
+        "Type" : "AWS::SNS::Topic",
+        "Description" : "BranchActivity tasks are published to this topic for processing",
+        "Properties" : {
+            "DisplayName" : "BranchActivity Task Topic",
+            "Subscription" : [ {
+                    "Endpoint" : { "Fn::GetAtt" : [ "BranchSNSTriggerLambda", "Arn" ] },
+                    "Protocol" : "lambda"
+                } ]
+        }
+    },
+    "PermissionForBranchSNSToInvokeLambda": {
+        "Type": "AWS::Lambda::Permission",
+        "Properties": {
+            "FunctionName": { "Ref": "BranchSNSTriggerLambda" },
+            "Action": "lambda:InvokeFunction",
+            "Principal": "sns.amazonaws.com",
+            "SourceArn": { "Ref" : "BranchSNS" }
+        }
+    },
+    "BranchS3Bucket" : {
+        "Type": "AWS::S3::Bucket",
+        "Properties": {
+            "Tags": [
+                {
+                    "Key" : "Category",
+                    "Value" : "StepFunction Extensions"
+                },
+                {
+                    "Key" : "Feature",
+                    "Value" : "Extension: Branch"
+                }
+            ]
+        }
+    },
+    "BranchSNSTriggerLambda": {
+        "Properties": {
+            "Code": {
+                "ZipFile": {
+                    "Fn::Join": [
+                        "\n",
+                        [
+                            "import boto3",
+                            "from json import loads, dumps",
+                            "from uuid import uuid4",
+                            "",
+                            { "Fn::Join" : [ 
+                                    "=", 
+                                    [
+                                        "_S3_BUCKET",
+                                        { "Fn::Join" : [
+                                                "\"",
+                                                [
+                                                    "",
+                                                    { "Ref" : "BranchS3Bucket" },
+                                                    ""
+                                                ]
+                                            ]
+                                        }
+                                        
+                                    ] 
+                                ]
+                            },
+                            "",
+                            "def extract_event_details(event):",
+                            "    message = event.get('Records', [{}])[0].get('Sns', {}).get('Message', None)",
+                            "    if message == None:",
+                            "        raise Exception(\"Message does not exist in event\")",
+                            "    message = loads(message)",
+                            "    task_token = message.get('TaskToken', None)",
+                            "    if task_token == None:",
+                            "        raise Exception(\"TaskToken not present in event\")",
+                            "    input_data = message.get('InputData', None)",
+                            "    if input_data == None:",
+                            "        raise Exception(\"InputData not present in event\")",
+                            "    branch_arn = input_data.pop('BranchArn', None)",
+                            "    if branch_arn == None:",
+                            "        raise Exception(\"BranchArn not present in the provided InputData\")",
+                            "    activity_arn = message.get('ActivityArn', None)",
+                            "    if activity_arn == None:",
+                            "        raise Exception(\"ActivityArn not present in event\")",
+                            "    return (task_token, input_data, branch_arn, activity_arn)",
+                            "",
+                            "def start_execution(branch_arn, input_data):",
+                            "    print(\"Starting execution of {} with inputs {}\".format(branch_arn, input_data))",
+                            "    try:",
+                            "        execution_name = str(uuid4())",
+                            "        ",
+                            "        client = boto3.client('stepfunctions')",
+                            "        resp = client.start_execution(",
+                            "            stateMachineArn=branch_arn, ",
+                            "            name=execution_name,",
+                            "            input=dumps(input_data))",
+                            "        ",
+                            "        print(\"Launched successfully {}\".format(resp[\"executionArn\"]))",
+                            "        return { \"Name\": execution_name, \"ExecutionArn\": resp[\"executionArn\"] }",
+                            "    except Exception as e:",
+                            "        raise Exception(\"Error starting Branch {}: {}\".format(branch_arn, e))",
+                            "",
+                            "def save_s3_file(s3_file_content):",
+                            "    try:",
+                            "        key = \"Active/{}\".format(s3_file_content[\"ExecutionArn\"])",
+                            "        print(\"Saving execution details to S3: {}:{}\".format(_S3_BUCKET, key))",
+                            "        client = boto3.client('s3')",
+                            "        resp = client.put_object(",
+                            "            Bucket=_S3_BUCKET,",
+                            "            Key=key,",
+                            "            Body=bytearray(dumps(s3_file_content)),",
+                            "            ContentType=\"application/json\")",
+                            "        print(\"Save successful\")",
+                            "    except Exception as e:",
+                            "        raise Exception(\"Error saving execution details {}: {}\".format(s3_file_content, e))",
+                            "",
+                            "def process_task(task_token, input_data, branch_arn, activity_arn):",
+                            "    s3_file_content = { \"TaskToken\": task_token, \"ActivityArn\": activity_arn, \"InputData\": input_data }",
+                            "    resp = start_execution(branch_arn, input_data)",
+                            "    s3_file_content[\"Name\"] = resp[\"Name\"]",
+                            "    s3_file_content[\"ExecutionArn\"] = resp[\"ExecutionArn\"]",
+                            "    save_s3_file(s3_file_content)",
+                            "",
+                            "def lambda_handler(event, context):",
+                            "    try:",
+                            "        print(\"Processing event: {}\".format(event))",
+                            "        (task_token, input_data, branch_arn, activity_arn) = extract_event_details(event)",
+                            "        process_task(task_token, input_data, branch_arn, activity_arn)",
+                            "        print(\"Processing completed\")",
+                            "    except Exception as e:",
+                            "        print(\"Unexpected error in processing:\\n\\t{}\".format(e))"
+                        ]
+                    ]
+                }
+            },
+            "Description": "Lambda triggered by events published on BranchSNS",
+            "Handler": "index.lambda_handler",
+            "MemorySize": 128,
+            "Role": {
+                "Fn::GetAtt": [
+                    "BranchSNSTriggerLambdaRole",
+                    "Arn"
+                ]
+            },
+            "Runtime": "python2.7",
+            "Timeout": 300,
+            "Tags": [
+                {
+                    "Key" : "Category",
+                    "Value" : "StepFunction Extensions"
+                },
+                {
+                    "Key" : "Feature",
+                    "Value" : "Extension: Branch"
+                }
+            ]
+        },
+        "Type": "AWS::Lambda::Function"
+    },
+    "BranchSNSTriggerLambdaRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Path": "/",
+        "Policies": [
+          {
+            "PolicyName": "root",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
+                  ],
+                  "Resource": "arn:aws:logs:*:*:*",
+                  "Effect": "Allow"
+                },
+                {
+                  "Action": [
+                    "s3:PutObject"
+                  ],
+                  "Resource": {
+                    "Fn::Join" : [ "",
+                        [
+                            "arn:aws:s3:::",
+                            { "Ref" : "BranchS3Bucket" },
+                            "/Active/*"
+                        ]
+                    ]
+                  },
+                  "Effect": "Allow"
+                },
+                {
+                  "Action": [
+                    "states:StartExecution"
+                  ],
+                  "Resource": {
+                    "Fn::Join" : [ ":",
+                        [
+                            "arn:aws:states",
+                            { "Ref" : "AWS::Region" },
+                            { "Ref" : "AWS::AccountId" },
+                            "stateMachine:*"
+                        ]
+                    ]
+                  },
+                  "Effect": "Allow"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "BranchCloudWatchRule" : {
+        "Type": "AWS::Events::Rule",
+        "Properties": {
+            "Description": "Scheduling of Lambda that monitors for sub- state machine launches by the BranchActivity",
+            "ScheduleExpression" : "rate(2 minutes)",
+            "State": "ENABLED",
+            "Targets" : [
+                {
+                    "Arn": {
+                        "Fn::GetAtt" : [ "BranchCloudWatchRuleLambda", "Arn" ]
+                    },
+                    "Id": {
+                        "Fn::GetAtt" : [ "BranchActivity", "Name" ]
+                    },
+                    "Input" : {
+                        "Fn::Join" : [
+                            "",
+                            [
+                                "{\"ActivityArn\": \"",
+                                { "Ref" : "BranchActivity" },
+                                "\" }"
+                            ]
+                        ]
+                    }
+                }
+            ]
+        }
+    },
+    "PermissionForBranchCloudWatchRuleToInvokeLambda": {
+        "Type": "AWS::Lambda::Permission",
+        "Properties": {
+            "FunctionName": { "Ref": "BranchCloudWatchRuleLambda" },
+            "Action": "lambda:InvokeFunction",
+            "Principal": "events.amazonaws.com",
+            "SourceArn": { "Fn::GetAtt": ["BranchCloudWatchRule", "Arn"] }
+        }
+    },
+    "BranchCloudWatchRuleLambda": {
+        "Properties": {
+            "Code": {
+                "ZipFile": {
+                    "Fn::Join": [
+                        "\n",
+                        [
+                            "import boto3",
+                            "from botocore.config import Config",
+                            "from datetime import datetime, timedelta",
+                            "from json import loads, dumps",
+                            "",
+                            "_LAMBDA_TIMEOUT=120",
+                            "_READ_TIMEOUT=65",
+                            "_POST_PROCESS_INTERVAL = 2",
+                            "",
+                            "_WORKER_NAME=\"BranchActivityMonitor\"",
+                            { "Fn::Join" : [ 
+                                    "=", 
+                                    [
+                                        "_SNS_TOPIC_ARN",
+                                        { "Fn::Join" : [
+                                                "\"",
+                                                [
+                                                    "",
+                                                    { "Ref" : "BranchSNS" },
+                                                    ""
+                                                ]
+                                            ]
+                                        }
+                                        
+                                    ] 
+                                ]
+                            },
+                            "",
+                            "def extract_event_details(event):",
+                            "    activity_arn = event.get('ActivityArn', None)",
+                            "    if not activity_arn:",
+                            "        raise Exception(\"ActivityArn key does not exist in event\")",
+                            "    return (activity_arn)",
+                            "",
+                            "def get_task(activity_arn):",
+                            "    try:",
+                            "        client = boto3.client('stepfunctions', config=Config(read_timeout=_READ_TIMEOUT))",
+                            "        resp = client.get_activity_task(activityArn=activity_arn, workerName=_WORKER_NAME)",
+                            "        task_token = resp.get('taskToken', '')",
+                            "        if task_token:",
+                            "            return (task_token, loads(resp['input']))",
+                            "        else:",
+                            "            return (None, None)",
+                            "    except Exception as e:",
+                            "        raise Exception(\"Error checking Activity '{}' for pending tasks: {}\".format(activity_arn, e))",
+                            "",
+                            "def dispatch_tasks(activity_arn, task_token, input_data):",
+                            "    try:",
+                            "        client = boto3.client('sns')",
+                            "        resp = client.publish(",
+                            "            TopicArn=_SNS_TOPIC_ARN,",
+                            "            MessageStructure='json',",
+                            "            Message=dumps({\"default\": dumps({ \"ActivityArn\": activity_arn, \"TaskToken\": task_token, \"InputData\": input_data }) } ) )",
+                            "        print(\"Dispatched TaskToken '{}' to SNS Topic '{}'\".format(task_token, _SNS_TOPIC_ARN))",
+                            "    except Exception as e:",
+                            "        raise Exception(\"Error dispatching task: {}\".format(e))",
+                            "",
+                            "def process_tasks(activity_arn):",
+                            "    print(\"Starting to monitor for Branch tasks for {}\".format(activity_arn))",
+                            "    dend = datetime.now() + timedelta(0, _LAMBDA_TIMEOUT)",
+                            "    while True:",
+                            "        if datetime.now() + timedelta(0, _READ_TIMEOUT + _POST_PROCESS_INTERVAL) > dend:",
+                            "            print(\"Insufficient time left to long poll\")",
+                            "            break",
+                            "        (task_token, input_data) = get_task(activity_arn)",
+                            "        if task_token:",
+                            "            dispatch_tasks(activity_arn, task_token, input_data)",
+                            "    print(\"Ending monitoring for Branch tasks\")",
+                            "",
+                            "def lambda_handler(event, context):",
+                            "    try:",
+                            "        (activity_arn) = extract_event_details(event)",
+                            "        process_tasks(activity_arn)",
+                            "    except Exception as e:",
+                            "        print(\"Unexpected error during processing:\\n\\t{}\".format(e))"
+                        ]
+                    ]
+                }
+            },
+            "Description": "Lambda watching for sub- state machine tasks issued by the BranchActivity, which it publishes to BranchSNS",
+            "Handler": "index.lambda_handler",
+            "MemorySize": 128,
+            "Role": {
+                "Fn::GetAtt": [
+                    "BranchCloudWatchRuleLambdaRole",
+                    "Arn"
+                ]
+            },
+            "Runtime": "python2.7",
+            "Timeout": 120,
+            "Tags": [
+                {
+                    "Key" : "Category",
+                    "Value" : "StepFunction Extensions"
+                },
+                {
+                    "Key" : "Feature",
+                    "Value" : "Extension: Branch"
+                }
+            ]
+        },
+        "Type": "AWS::Lambda::Function"
+    },
+    "BranchCloudWatchRuleLambdaRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Path": "/",
+        "Policies": [
+          {
+            "PolicyName": "root",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
+                  ],
+                  "Resource": "arn:aws:logs:*:*:*",
+                  "Effect": "Allow"
+                }
+              ]
+            }
+          },
+          {
+            "PolicyName": "sfn",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Action": [
+                    "states:GetActivityTask"
+                  ],
+                  "Resource": [ { "Ref" : "BranchActivity" } ],
+                  "Effect": "Allow"
+                }
+              ]
+            }
+          },
+          {
+            "PolicyName": "sns",
+            "PolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Action": [
+                            "sns:Publish"
+                        ],
+                        "Resource": [ { "Ref" : "BranchSNS" } ],
+                        "Effect": "Allow",
+                    }
+                ]
+            }
+          }        
+        ]
+      }
+    },
+    "BranchTaskCompletionCloudWatchRule" : {
+        "Type": "AWS::Events::Rule",
+        "Properties": {
+            "Description": "Scheduling of Lambda that monitors for completion of StateMachines launched by BranchActivity",
+            "ScheduleExpression" : "rate(1 minute)",
+            "State": "ENABLED",
+            "Targets" : [
+                {
+                    "Arn": {
+                        "Fn::GetAtt" : [ "BranchTaskCompletionCloudWatchRuleLambda", "Arn" ]
+                    },
+                    "Id": {
+                        "Fn::GetAtt" : [ "BranchActivity", "Name" ]
+                    }
+                }
+            ]
+        }
+    },
+    "PermissionForBranchTaskCompletionCloudWatchRuleToInvokeLambda": {
+        "Type": "AWS::Lambda::Permission",
+        "Properties": {
+            "FunctionName": { "Ref": "BranchTaskCompletionCloudWatchRuleLambda" },
+            "Action": "lambda:InvokeFunction",
+            "Principal": "events.amazonaws.com",
+            "SourceArn": { "Fn::GetAtt": ["BranchTaskCompletionCloudWatchRule", "Arn"] }
+        }
+    },
+    "BranchTaskCompletionCloudWatchRuleLambda": {
+        "Properties": {
+            "Code": {
+                "ZipFile": {
+                    "Fn::Join": [
+                        "\n",
+                        [
+                            "import boto3",
+                            "from datetime import datetime, timedelta",
+                            "from json import loads, dumps",
+                            "from time import sleep",
+                            "",
+                            "_SLEEP = 5",
+                            "_LAMBDA_TIMEOUT=60",
+                            "_S3_BUCKET=\"k19-branchs3bucket-1bq0zgaso93zd\"",
+                            { "Fn::Join" : [ 
+                                    "=", 
+                                    [
+                                        "_S3_BUCKET",
+                                        { "Fn::Join" : [
+                                                "\"",
+                                                [
+                                                    "",
+                                                    { "Ref" : "BranchS3Bucket" },
+                                                    ""
+                                                ]
+                                            ]
+                                        }
+                                        
+                                    ] 
+                                ]
+                            },
+                            "",
+                            "def get_active_executions():",
+                            "    active_keys = []",
+                            "    ",
+                            "    try:",
+                            "        print(\"Retrieving active executions\")",
+                            "        client = boto3.client('s3')",
+                            "        resp = client.list_objects_v2(",
+                            "            Bucket=_S3_BUCKET,",
+                            "            Prefix=\"Active/\")",
+                            "        for key_info in resp.get(\"Contents\", []):",
+                            "            active_keys.append(key_info[\"Key\"])",
+                            "        while resp.get(\"IsTruncated\", False):",
+                            "            resp = client.list_objects_v2(",
+                            "                Bucket=_S3_BUCKET,",
+                            "                Prefix=\"Active/\",",
+                            "                ContinuationToken=resp[\"NextContinuationToken\"])",
+                            "            for key_info in resp[\"Contents\"]:",
+                            "                active_keys.append(key_info[\"Key\"])",
+                            "        print(\"{} executions found\".format(len(active_keys)))",
+                            "    except Exception as e:",
+                            "        print(\"Error retrieving active tasks from {}: {}\".format(_S3_BUCKET, e))",
+                            "    ",
+                            "    return active_keys",
+                            "",
+                            "def process_active_execution(key):",
+                            "    try:",
+                            "        ",
+                            "        # Load details of execution",
+                            "        s3_client = boto3.client('s3')",
+                            "        excution_data = {}",
+                            "        resp = {}",
+                            "        try:",
+                            "            resp = s3_client.get_object(",
+                            "                Bucket=_S3_BUCKET,",
+                            "                Key=key)",
+                            "            execution_data = loads(resp[\"Body\"].read())",
+                            "        except Exception as e:",
+                            "            print(\"Caught error retrieving key {}: {}\".format(key, e))",
+                            "            return",
+                            "        ",
+                            "        # Send heartbeat",
+                            "        sf_client = boto3.client('stepfunctions')",
+                            "        try:",
+                            "            sf_client.send_task_heartbeat(taskToken=execution_data[\"TaskToken\"])",
+                            "        except Exception as e:",
+                            "            print(\"Caught heartbeat exception: {}\".format(e))",
+                            "            ",
+                            "        # Check on StateMachine",
+                            "        resp = sf_client.describe_execution(executionArn=execution_data[\"ExecutionArn\"])",
+                            "        if resp[\"status\"] == \"RUNNING\":",
+                            "            print(\"\\tStill running\")",
+                            "            return",
+                            "        ",
+                            "        if resp[\"status\"] == \"SUCCEEDED\":",
+                            "            print(\"\\tBranch processing succesful\")",
+                            "            sf_client.send_task_success(",
+                            "                taskToken=execution_data[\"TaskToken\"],",
+                            "                output=resp[\"output\"])",
+                            "        else:",
+                            "            print(\"\\tBranch processing failed:\\n\\t{}\".format(resp[\"output\"]))",
+                            "            sf_client.send_task_failure(",
+                            "                taskToken=execution_data[\"TaskToken\"],",
+                            "                error=\"Processing error\",",
+                            "                cause=resp[\"output\"])",
+                            "        ",
+                            "        execution_data[\"Status\"] = resp[\"status\"]",
+                            "        execution_data[\"Output\"] = resp[\"output\"]",
+                            "        ",
+                            "        # Move to archival",
+                            "        archive_key = \"Archive/{}\".format(\"/\".join(key.split(\"/\")[1:]))",
+                            "        print(\"Archiving execution to {}\".format(archive_key))",
+                            "        s3_client.put_object(",
+                            "            Bucket=_S3_BUCKET,",
+                            "            Key=archive_key,",
+                            "            Body=bytearray(dumps(execution_data)),",
+                            "            ContentType=\"application/json\")",
+                            "        ",
+                            "        # Delete active key",
+                            "        try:",
+                            "            s3_client.delete_object(",
+                            "                Bucket=_S3_BUCKET,",
+                            "                Key=key)",
+                            "        except:",
+                            "            pass",
+                            "",
+                            "    except Exception as e:",
+                            "        print(\"Error processing key {}: {}\".format(key, e))",
+                            "",
+                            "def process():",
+                            "    print(\"Starting to monitor for execution completion\")",
+                            "    dend = datetime.now() + timedelta(0, _LAMBDA_TIMEOUT)",
+                            "    while True:",
+                            "        if datetime.now() + timedelta(0, 10) > dend:",
+                            "            print(\"Insufficient time for monitor cycle - exiting\")",
+                            "            break",
+                            "        for key in get_active_executions():",
+                            "            print(\"Processing: {}\".format(key))",
+                            "            process_active_execution(key)",
+                            "            print(\"Completed processing for: {}\".format(key))",
+                            "        sleep(_SLEEP)",
+                            "    print(\"Ending monitoring for execution completion\")",
+                            "",
+                            "def lambda_handler(event, context):",
+                            "    try:",
+                            "        process()",
+                            "    except Exception as e:",
+                            "        print(\"Caught unexpected error during processing: {}\".format(e))"
+                        ]
+                    ]
+                }
+            },
+            "Description": "Lambda monitoring for StateMachine completion, so it can update the BranchActivity",
+            "Handler": "index.lambda_handler",
+            "MemorySize": 128,
+            "Role": {
+                "Fn::GetAtt": [
+                    "BranchTaskCompletionCloudWatchRuleLambdaRole",
+                    "Arn"
+                ]
+            },
+            "Runtime": "python2.7",
+            "Timeout": 60,
+            "Tags": [
+                {
+                    "Key" : "Category",
+                    "Value" : "StepFunction Extensions"
+                },
+                {
+                    "Key" : "Feature",
+                    "Value" : "Extension: Branch"
+                }
+            ]
+        },
+        "Type": "AWS::Lambda::Function"
+    },
+    "BranchTaskCompletionCloudWatchRuleLambdaRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "Path": "/",
+        "Policies": [
+          {
+            "PolicyName": "root",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
+                  ],
+                  "Resource": "arn:aws:logs:*:*:*",
+                  "Effect": "Allow"
+                }
+              ]
+            }
+          },
+          {
+            "PolicyName": "sfn",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Action": [
+                    "states:SendTaskHeartbeat",
+                    "states:SendTaskSuccess",
+                    "states:SendTaskFailure"
+                  ],
+                  "Resource": [ { "Ref" : "BranchActivity" } ],
+                  "Effect": "Allow"
+                },
+                {
+                  "Action": [
+                    "states:DescribeExecution"
+                  ],
+                  "Resource": {
+                    "Fn::Join" : [ ":",
+                        [
+                            "arn:aws:states",
+                            { "Ref" : "AWS::Region" },
+                            { "Ref" : "AWS::AccountId" },
+                            "execution:*"
+                        ]
+                    ]
+                  },
+                  "Effect": "Allow"
+                }
+              ]
+            }
+          },
+          {
+            "PolicyName": "s3",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Action": [
+                    "s3:ListBucket"
+                  ],
+                  "Resource": {
+                    "Fn::Join" : [ "",
+                        [
+                            "arn:aws:s3:::",
+                            { "Ref" : "BranchS3Bucket" }
+                        ]
+                    ]
+                  },
+                  "Effect": "Allow"
+                },
+                {
+                  "Action": [
+                    "s3:GetObject",
+                    "s3:DeleteObject",
+                  ],
+                  "Resource": {
+                    "Fn::Join" : [ "",
+                        [
+                            "arn:aws:s3:::",
+                            { "Ref" : "BranchS3Bucket" },
+                            "/Active/*"
+                        ]
+                    ]
+                  },
+                  "Effect": "Allow"
+                },
+                {
+                  "Action": [
+                    "s3:PutObject"
+                  ],
+                  "Resource": {
+                    "Fn::Join" : [ "",
+                        [
+                            "arn:aws:s3:::",
+                            { "Ref" : "BranchS3Bucket" },
+                            "/Archive/*"
+                        ]
+                    ]
+                  },
+                  "Effect": "Allow"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }  
   },
   "Outputs": {
     "ForConsolidatorName" : {
@@ -286,6 +1117,14 @@
     "LimitedParallelConsolidatorArn" : {
       "Description" : "The Arn of the LimitedParallelConsolidator function",
       "Value" : { "Fn::GetAtt" : [ "LimitedParallelConsolidator", "Arn" ] }
+    },
+    "BranchActivityArn" : {
+      "Description" : "The Arn of the Branch Activity",
+      "Value" : { "Ref" : "BranchActivity" }
+    },
+    "BranchActivityName" : {
+      "Description" : "The name of the Branch Activity",
+      "Value" : { "Fn::GetAtt" : [ "BranchActivity", "Name" ] }
     }
   }
 }
