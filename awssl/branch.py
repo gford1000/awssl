@@ -22,16 +22,17 @@ class Branch(object):
 		self._start_state = StateObject
 
 	def _build_states(self):
-		def add(new_states, state_list):
-			for state in new_states:
-				if state and state not in state_list:
-					state_list.append(state)
-					add(state.get_child_states(), state_list)
-
 		states = []
-		if self.get_start_state():
-			add(self.get_start_state().get_child_states(), states)
-		return states
+		states.append(self.get_start_state())
+		reached_states = []
+		while len(states)>0 :
+			current_state = states.pop()
+			reached_states.append(current_state)
+			childrens = current_state.get_child_states()
+			for child in childrens :
+				if child and child not in reached_states:
+					states.append(child)
+		return reached_states
 
 	def to_json(self):
 		j = {

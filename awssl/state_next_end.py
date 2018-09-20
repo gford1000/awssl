@@ -56,5 +56,5 @@ class StateNextEnd(StateInputOutput):
 	def get_child_states(self):
 		states = super(StateNextEnd, self).get_child_states()
 		if not self.get_end_state():
-			states = states + self.get_next_state().get_child_states()
+			states.append(self.get_next_state())
 		return states
