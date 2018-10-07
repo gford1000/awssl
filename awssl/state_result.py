@@ -24,6 +24,6 @@ class StateResult(StateNextEnd):
 		return self._result_path
 
 	def set_result_path(self, ResultPath="$"):
-		if ResultPath and not isinstance(ResultPath, str):
+		if ResultPath and not isinstance(ResultPath, basestring):
 			raise Exception("ResultPath must be either a string value if specified, or None, for step ({})".format(self.get_name()))
 		self._result_path = ResultPath

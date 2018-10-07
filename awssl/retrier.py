@@ -61,7 +61,7 @@ class Retrier(object):
 		if len(ErrorNameList) == 0:
 			raise Exception("ErrorNameList must be a non-empty list for a Retrier")
 		for o in ErrorNameList:
-			if not isinstance(o, str):
+			if not isinstance(o, basestring):
 				raise Exception("ErrorNameList must only contain strings")
 		self._error_name_list = ErrorNameList
 
@@ -80,8 +80,8 @@ class Retrier(object):
 
 		The interval must be >= 1 second.  Default is 1 second.
 
-		:param IntervalSeconds: [Optional] The interval in seconds before retrying the state.  
-		:type IntervalSeconds: int		
+		:param IntervalSeconds: [Optional] The interval in seconds before retrying the state.
+		:type IntervalSeconds: int
 
 		"""
 		if not IntervalSeconds:
@@ -149,7 +149,7 @@ class Retrier(object):
 		Validates this instance is correctly specified.
 
 		Raises ``Exception`` with details of the error, if the state machine is incorrectly defined.
-		
+
 		"""
 		if not self.get_error_name_list():
 			raise Exception("Retrier must have an ErrorNameList")
@@ -159,7 +159,7 @@ class Retrier(object):
 		Returns the JSON representation of this instance.
 
 		:returns: dict -- The JSON representation
-		
+
 		"""
 		return {
 			"ErrorEquals" : self.get_error_name_list(),

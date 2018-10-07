@@ -1,6 +1,6 @@
 class Comparison(object):
 	"""
-	Defines the available set of Comparisons which returns True or False 
+	Defines the available set of Comparisons which returns True or False
 	"""
 
 	def __init__(self, Variable=None, Comparator=None, Value=None):
@@ -22,10 +22,10 @@ class Comparison(object):
 
 	def _get_value_types(self):
 		return {
-			"String" : (str),
+			"String" : (basestring),
 			"Numeric": (int, float),
 			"Boolean": (bool),
-			"Timestamp": (str)
+			"Timestamp": (basestring)
 		}
 
 	def _validate_value_against_comparator(self, value):
@@ -36,7 +36,7 @@ class Comparison(object):
 		return self._variable
 
 	def set_variable(self, Variable=None):
-		if (not Variable) or not isinstance(Variable, str):
+		if (not Variable) or not isinstance(Variable, basestring):
 			raise Exception("ChoiceRule must have a Variable, which must be a string")
 		self._variable = Variable
 
@@ -44,11 +44,11 @@ class Comparison(object):
 		return self._comparator
 
 	def set_comparator(self, Comparator=None):
-		if (not Comparator) or not isinstance(Comparator, str):
+		if (not Comparator) or not isinstance(Comparator, basestring):
 			raise Exception("ChoiceRule must have a Comparator, which must be a string")
 		self._comparator = None
 		self._comparator_type = None
-		for key in self._get_comparators().keys():			
+		for key in self._get_comparators().keys():
 			if Comparator in self._get_comparators()[key]:
 				self._comparator_type = key
 				break

@@ -9,11 +9,11 @@ class StateBase(object):
 	def __init__(self, Name=None, Type=None, Comment=""):
 		if not Name:
 			raise Exception("Name must be specified")
-		if not isinstance(Name, str):
+		if not isinstance(Name, basestring):
 			raise Exception("Name must be a string value")
 		if not Type:
 			raise Exception("Type must be specified (step '{}'".format(Name))
-		if not isinstance(Type, str):
+		if not isinstance(Type, basestring):
 			raise Exception("Type must be a string value (step '{}'".format(Name))
 		if not Type in ["Pass", "Task", "Choice", "Wait", "Succeed", "Fail", "Parallel", "Ext"]:
 			raise Exception("Type must be one of the allowed types for AWS Step Functions (step '{}'".format(Name))
@@ -43,11 +43,10 @@ class StateBase(object):
 	def set_comment(self, Comment=""):
 		comment = ""
 		if Comment:
-			if not isinstance(Comment, str):
+			if not isinstance(Comment, basestring):
 				raise Exception("Comment must be a string value if specified, for step ({})".format(self.get_name()))
 			comment = Comment
 		self._comment = comment
 
 	def get_child_states(self):
 		return [self]
-

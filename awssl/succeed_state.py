@@ -1,7 +1,7 @@
 from .state_input_output import StateInputOutput
 
 class Succeed(StateInputOutput):
-	""" 
+	"""
 	Succeed is a state that terminates a State Machine successfully.
 
 	Succeed are typically used as part of a Condition state, and can receive Input and return Output.
@@ -18,7 +18,7 @@ class Succeed(StateInputOutput):
 	"""
 
 	def __init__(self, Name="", Comment="", InputPath="$", OutputPath="$"):
-		""" 
+		"""
 		Initialiser for an instance of Succeed.
 
 		:param Name: [Required] The name of the state within the branch of the state machine
@@ -38,7 +38,7 @@ class Succeed(StateInputOutput):
 		Validates this instance is correctly specified.
 
 		Raises ``Exception`` with details of the error, if the state machine is incorrectly defined.
-		
+
 		"""
 		super(Succeed, self).validate()
 
@@ -47,7 +47,7 @@ class Succeed(StateInputOutput):
 		Returns the JSON representation of this instance.
 
 		:returns: dict -- The JSON representation
-		
+
 		"""
 		return super(Succeed, self).to_json()
 
@@ -65,7 +65,7 @@ class Succeed(StateInputOutput):
 		"""
 		if not NameFormatString:
 			raise Exception("NameFormatString must not be None (step '{}')".format(self.get_name()))
-		if not isinstance(NameFormatString, str):
+		if not isinstance(NameFormatString, basestring):
 			raise Exception("NameFormatString must be a str (step '{}')".format(self.get_name()))
 
 		c = Succeed(

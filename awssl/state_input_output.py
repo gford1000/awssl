@@ -27,7 +27,7 @@ class StateInputOutput(StateBase):
 		return self._input_path
 
 	def set_input_path(self, InputPath="$"):
-		if InputPath and not isinstance(InputPath, str):
+		if InputPath and not isinstance(InputPath, basestring):
 			raise Exception("InputPath must be either a string value if specified, or None, for step ({})".format(self.get_name()))
 		self._input_path = InputPath
 
@@ -35,6 +35,6 @@ class StateInputOutput(StateBase):
 		return self._output_path
 
 	def set_output_path(self, OutputPath="$"):
-		if OutputPath and not isinstance(OutputPath, str):
+		if OutputPath and not isinstance(OutputPath, basestring):
 			raise Exception("OutputPath must be either a string value if specified, or None, for step ({})".format(self.get_name()))
 		self._output_path = OutputPath

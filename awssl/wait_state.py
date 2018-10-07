@@ -3,7 +3,7 @@ from .state_next_end import StateNextEnd
 import datetime
 
 class Wait(StateNextEnd):
-	""" 
+	"""
 	Wait is a Step Function state that pauses execution of the State Machine for a period of time.
 
 	Waits can be durations defined in seconds, or until a specific time.
@@ -39,9 +39,9 @@ class Wait(StateNextEnd):
 
 	"""
 
-	def __init__(self, Name="", Comment="", InputPath="$", OutputPath="$", EndState=False, NextState=None, 
+	def __init__(self, Name="", Comment="", InputPath="$", OutputPath="$", EndState=False, NextState=None,
 		WaitForSeconds=None, WaitForSecondsPath=None, WaitUntilISO8601Timestamp=None, WaitUntilISO8601TimestampPath=None):
-		""" 
+		"""
 		Initialize for the Wait class
 
 		:param Name: [Required] The name of the state within the branch of the state machine
@@ -100,7 +100,7 @@ class Wait(StateNextEnd):
 		Validates this instance is correctly specified.
 
 		Raises ``Exception`` with details of the error, if the state is incorrectly defined.
-		
+
 		"""
 		super(Wait, self).validate()
 		if len(self._get_assigned_wait()) != 1:
@@ -111,7 +111,7 @@ class Wait(StateNextEnd):
 		Returns the JSON representation of this instance.
 
 		:returns: dict -- The JSON representation
-		
+
 		"""
 		j = super(Wait, self).to_json()
 		for k, v in self._get_assigned_wait().viewitems():
@@ -128,7 +128,7 @@ class Wait(StateNextEnd):
 
 	def set_wait_seconds(self, WaitForSeconds=1):
 		"""
-		Sets the wait interval in seconds.  
+		Sets the wait interval in seconds.
 
 		The interval must be a positive integer if specifed.  Default value is 1 second.
 
@@ -159,7 +159,7 @@ class Wait(StateNextEnd):
 		:type WaitForSecondsPath: str
 
 		"""
-		if WaitForSecondsPath and not isinstance(WaitForSecondsPath, str):
+		if WaitForSecondsPath and not isinstance(WaitForSecondsPath, basestring):
 			raise Exception("WaitForSecondsPath must be an string value (step '{}')".format(self.get_name()))
 		self._reset_waits()
 		self._wait_seconds_path = WaitForSecondsPath
@@ -180,7 +180,7 @@ class Wait(StateNextEnd):
 		:type WaitUntilISO8601Timestamp: str
 		"""
 		if WaitUntilISO8601Timestamp:
-			if not isinstance(WaitUntilISO8601Timestamp, str):
+			if not isinstance(WaitUntilISO8601Timestamp, basestring):
 				raise Exception("WaitUntilISO8601Timestamp must be an string value (step '{}')".format(self.get_name()))
 			try:
 				dt = datetime.datetime.strptime(WaitUntilISO8601Timestamp, "%Y-%m-%dT%H:%M:%SZ")
@@ -194,7 +194,7 @@ class Wait(StateNextEnd):
 		Returns the JSON Path with which to resolve the wait date/time from the Input data supplied to the state.
 
 		:returns: str
-		"""		
+		"""
 		return self._wait_timestamp_path
 
 	def set_wait_timestamp_path(self, WaitUntilISO8601TimestampPath=None):
@@ -206,7 +206,7 @@ class Wait(StateNextEnd):
 		:param WaitUntilISO8601TimestampPath: [Optional] A JSONPath to a datetime string that conforms to the RFC3339 profile of ISO 8601, within the Input data provided to the state.
 		:type WaitUntilISO8601Timestamp: str
 		"""
-		if WaitUntilISO8601TimestampPath and not isinstance(WaitUntilISO8601TimestampPath, str):
+		if WaitUntilISO8601TimestampPath and not isinstance(WaitUntilISO8601TimestampPath, basestring):
 			raise Exception("WaitUntilISO8601TimestampPath must be an string value (step '{}')".format(self.get_name()))
 		self._reset_waits()
 		self._wait_timestamp_path = WaitUntilISO8601TimestampPath
@@ -225,7 +225,7 @@ class Wait(StateNextEnd):
 		"""
 		if not NameFormatString:
 			raise Exception("NameFormatString must not be None (step '{}')".format(self.get_name()))
-		if not isinstance(NameFormatString, str):
+		if not isinstance(NameFormatString, basestring):
 			raise Exception("NameFormatString must be a str (step '{}')".format(self.get_name()))
 
 		c = Wait(
@@ -240,7 +240,6 @@ class Wait(StateNextEnd):
 			WaitUntilISO8601TimestampPath=self.get_wait_timestamp_path())
 
 		if self.get_next_state():
-			c.set_next_state(NextState=self.get_next_state().clone(NameFormatString))	
+			c.set_next_state(NextState=self.get_next_state().clone(NameFormatString))
 
 		return c
-
