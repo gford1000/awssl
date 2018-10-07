@@ -31,12 +31,12 @@ class Parallel(StateRetryCatch):
 	:type: RetryList: list of ``Retrier``
 	:param CatcherList: [Optional] ``list`` of ``Catcher`` instances corresponding to error states that can be caught and handled by further states being executed in the ``StateMachine``.
 	:type: CatcherList: list of ``Catcher``
-	:param BranchList: [Required] ``list`` of ``StateBase`` instances, providing the starting states for each branch to be run concurrently 
+	:param BranchList: [Required] ``list`` of ``StateBase`` instances, providing the starting states for each branch to be run concurrently
 	:type: BranchList: list of ``StateBase``
 
 	"""
 
-	def __init__(self, Name=None, Comment="", InputPath="$", OutputPath="$", NextState=None, EndState=None, 
+	def __init__(self, Name=None, Comment="", InputPath="$", OutputPath="$", NextState=None, EndState=False,
 					ResultPath="$", RetryList=None, CatcherList=None, BranchList=None):
 		"""
 		Initializer for the Parallel state.
@@ -66,12 +66,12 @@ class Parallel(StateRetryCatch):
 		:type: RetryList: list of ``Retrier``
 		:param CatcherList: [Optional] ``list`` of ``Catcher`` instances corresponding to error states that can be caught and handled by further states being executed in the ``StateMachine``.
 		:type: CatcherList: list of ``Catcher``
-		:param BranchList: [Required] ``list`` of ``StateBase`` instances, providing the starting states for each branch to be run concurrently 
+		:param BranchList: [Required] ``list`` of ``StateBase`` instances, providing the starting states for each branch to be run concurrently
 		:type: BranchList: list of ``StateBase``
 
 		"""
-		super(Parallel, self).__init__(Name=Name, Type="Parallel", Comment=Comment, 
-			InputPath=InputPath, OutputPath=OutputPath, NextState=NextState, EndState=EndState, 
+		super(Parallel, self).__init__(Name=Name, Type="Parallel", Comment=Comment,
+			InputPath=InputPath, OutputPath=OutputPath, NextState=NextState, EndState=EndState,
 			ResultPath=ResultPath, RetryList=RetryList, CatcherList=CatcherList)
 		self._branches = None
 		self.set_branch_list(BranchList)
@@ -94,8 +94,8 @@ class Parallel(StateRetryCatch):
 
 		At least one branch is required for the state to be valid.
 
-		:param BranchList: [Required] ``list`` of ``StateBase`` instances, providing the starting states for each branch to be run concurrently 
-		:type: BranchList: list of ``StateBase``		
+		:param BranchList: [Required] ``list`` of ``StateBase`` instances, providing the starting states for each branch to be run concurrently
+		:type: BranchList: list of ``StateBase``
 		"""
 		if not BranchList:
 			self._branches = None
@@ -110,18 +110,18 @@ class Parallel(StateRetryCatch):
 				raise Exception("BranchList must contain only subclasses of StateBase (step '{}'".format(self.get_name()))
 		self._branches = []
 		for o in BranchList:
-			self.add_branch(o)				
+			self.add_branch(o)
 
 	def validate(self):
 		"""
 		Validates this instance is correctly specified.
 
 		Raises ``Exception`` with details of the error, if the state is incorrectly defined.
-		
+
 		"""
 		super(Parallel, self).validate()
 
-		if (not self._branches) or len(self._branches) == 0: 
+		if (not self._branches) or len(self._branches) == 0:
 			raise Exception("Parallel state must contain at least one branch (step '{}'".format(self.get_name()))
 		for b in self._branches:
 			b.validate()
@@ -131,9 +131,9 @@ class Parallel(StateRetryCatch):
 		Returns the JSON representation of this instance.
 
 		:returns: dict -- The JSON representation
-		
+
 		"""
-		if (not self._branches) or len(self._branches) == 0: 
+		if (not self._branches) or len(self._branches) == 0:
 			raise Exception("Parallel state must contain at least one branch (step '{}'".format(self.get_name()))
 
 		branches = []
@@ -179,6 +179,6 @@ class Parallel(StateRetryCatch):
 			c.set_branch_list(BranchList=[ b.get_start_state().clone(NameFormatString) for b in self._branches ])
 
 		if self.get_next_state():
-			c.set_next_state(NextState=self.get_next_state().clone(NameFormatString))	
+			c.set_next_state(NextState=self.get_next_state().clone(NameFormatString))
 
 		return c

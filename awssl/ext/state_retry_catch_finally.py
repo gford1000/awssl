@@ -12,9 +12,9 @@ class StateRetryCatchFinally(StateRetryCatch):
 		TaskWithFinally, ParallelWithFinally
 	"""
 
-	def __init__(self, Name=None, Comment="", InputPath="$", OutputPath="$", NextState=None, EndState=None, ResultPath="$", RetryList=None, CatcherList=None, FinallyState=None):
-		super(StateRetryCatchFinally, self).__init__(Name=Name, Type="Ext", Comment=Comment, 
-			InputPath=InputPath, OutputPath=OutputPath, NextState=NextState, EndState=EndState, 
+	def __init__(self, Name=None, Comment="", InputPath="$", OutputPath="$", NextState=None, EndState=False, ResultPath="$", RetryList=None, CatcherList=None, FinallyState=None):
+		super(StateRetryCatchFinally, self).__init__(Name=Name, Type="Ext", Comment=Comment,
+			InputPath=InputPath, OutputPath=OutputPath, NextState=NextState, EndState=EndState,
 			ResultPath=ResultPath, RetryList=RetryList, CatcherList=CatcherList)
 		self._finally_branch = None
 		self._constructed_states = None
@@ -145,4 +145,3 @@ class StateRetryCatchFinally(StateRetryCatch):
 			if not isinstance(FinallyState, StateBase):
 				raise Exception("FinallyState must inherited from StateBase, for step ({})".format(self.get_name()))
 		self._finally_branch = FinallyState
-

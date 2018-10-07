@@ -7,7 +7,7 @@ class StateResult(StateNextEnd):
 		Pass, Task, Parallel
 	"""
 
-	def __init__(self, Name=None, Type=None, Comment="", InputPath="$", OutputPath="$", NextState=None, EndState=None, ResultPath="$"):
+	def __init__(self, Name=None, Type=None, Comment="", InputPath="$", OutputPath="$", NextState=None, EndState=False, ResultPath="$"):
 		super(StateResult, self).__init__(Name=Name, Type=Type, Comment=Comment, InputPath=InputPath, OutputPath=OutputPath, NextState=NextState, EndState=EndState)
 		self._result_path = "$"
 		self.set_result_path(ResultPath)

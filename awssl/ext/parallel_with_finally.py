@@ -35,12 +35,12 @@ class ParallelWithFinally(StateRetryCatchFinally):
 	:type: CatcherList: list of ``Catcher``
 	:param FinallyState: [Optional] First state of the finally branch to be invoked
 	:type: FinallyState: Derived from ``StateBase``
-	:param BranchList: [Required] ``list`` of ``StateBase`` instances, providing the starting states for each branch to be run concurrently 
+	:param BranchList: [Required] ``list`` of ``StateBase`` instances, providing the starting states for each branch to be run concurrently
 	:type: BranchList: list of ``StateBase``
 
 	"""
 
-	def __init__(self, Name=None, Comment="", InputPath="$", OutputPath="$", NextState=None, EndState=None, 
+	def __init__(self, Name=None, Comment="", InputPath="$", OutputPath="$", NextState=None, EndState=False,
 					ResultPath="$", RetryList=None, CatcherList=None, FinallyState=None, BranchList=None):
 		"""
 		Initializer for the ParallelWithFinally state.
@@ -72,12 +72,12 @@ class ParallelWithFinally(StateRetryCatchFinally):
 		:type: CatcherList: list of ``Catcher``
 		:param FinallyState: [Optional] First state of the finally branch to be invoked
 		:type: FinallyState: Derived from ``StateBase``
-		:param BranchList: [Required] ``list`` of ``StateBase`` instances, providing the starting states for each branch to be run concurrently 
+		:param BranchList: [Required] ``list`` of ``StateBase`` instances, providing the starting states for each branch to be run concurrently
 		:type: BranchList: list of ``StateBase``
 
 		"""
-		super(ParallelWithFinally, self).__init__(Name=Name, Comment=Comment, 
-			InputPath=InputPath, OutputPath=OutputPath, NextState=NextState, EndState=EndState, 
+		super(ParallelWithFinally, self).__init__(Name=Name, Comment=Comment,
+			InputPath=InputPath, OutputPath=OutputPath, NextState=NextState, EndState=EndState,
 			ResultPath=ResultPath, RetryList=RetryList, CatcherList=CatcherList, FinallyState=FinallyState)
 		self._branches = None
 		self.set_branch_list(BranchList)
@@ -118,9 +118,9 @@ class ParallelWithFinally(StateRetryCatchFinally):
 
 		At least one branch is required for the state to be valid.
 
-		:param BranchList: [Required] ``list`` of ``StateBase`` instances, providing the starting states for each branch to be run concurrently 
-		:type: BranchList: list of ``StateBase``		
-		"""		
+		:param BranchList: [Required] ``list`` of ``StateBase`` instances, providing the starting states for each branch to be run concurrently
+		:type: BranchList: list of ``StateBase``
+		"""
 		if not BranchList:
 			self._branches = None
 			return
@@ -134,7 +134,7 @@ class ParallelWithFinally(StateRetryCatchFinally):
 				raise Exception("BranchList must contain only subclasses of StateBase (step '{}'".format(self.get_name()))
 		self._branches = []
 		for o in BranchList:
-			self.add_branch(o)				
+			self.add_branch(o)
 
 	def clone(self, NameFormatString="{}"):
 		"""
@@ -171,9 +171,9 @@ class ParallelWithFinally(StateRetryCatchFinally):
 			c.set_branch_list(BranchList=[ b.get_start_state().clone(NameFormatString) for b in self._branches ])
 
 		if self.get_next_state():
-			c.set_next_state(NextState=self.get_next_state().clone(NameFormatString))	
+			c.set_next_state(NextState=self.get_next_state().clone(NameFormatString))
 
 		if self.get_finally_state():
-			c.set_finally_state(FinallyState=self.get_finally_state().clone(NameFormatString))			
+			c.set_finally_state(FinallyState=self.get_finally_state().clone(NameFormatString))
 
 		return c

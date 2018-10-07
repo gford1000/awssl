@@ -1,5 +1,5 @@
-from ..pass_state import Pass 
-from ..task_state import Task 
+from ..pass_state import Pass
+from ..task_state import Task
 from ..parallel_state import Parallel
 from ..state_base import StateBase
 from ..retrier import Retrier
@@ -13,7 +13,7 @@ _FINALIZER = "ForFinalizer"
 _FINALIZER_PARALLEL_ITERATION = "ForFinalizerParallelIterations"
 _LIMITED_PARALLEL_CONSOLIDATOR = "LimitedParallelConsolidator"
 
-def set_ext_arns(ForInitializer=None, ForExtractor=None, ForConsolidator=None, 
+def set_ext_arns(ForInitializer=None, ForExtractor=None, ForConsolidator=None,
 				ForFinalizer=None, ForFinalizerParallelIterations=None,
 				LimitedParallelConsolidator=None):
 	"""
@@ -22,7 +22,7 @@ def set_ext_arns(ForInitializer=None, ForExtractor=None, ForConsolidator=None,
 	The functions are available in the github repo both as individual lambdas or combined in a CloudFormation script for easy deployment.
 
 	All the Arns must be specified or this function will generate an Exception.
-	
+
 	:param ForInitializer: The Arn of the ForInitializer Lambda function, used by the ``For`` state
 	:type ForInitializer: str
 	:param ForExtractor: The Arn of the ForExtractor Lambda function, used by the ``For`` state
@@ -44,8 +44,8 @@ def set_ext_arns(ForInitializer=None, ForExtractor=None, ForConsolidator=None,
 			raise Exception("set_ext_arns: {} must be a str".format(val_name))
 		_ext_arns[val_name] = val
 
-	for v, n in [(ForInitializer, _INITIALIZER), (ForExtractor, _EXTRACTOR), 
-				(ForConsolidator, _CONSOLIDATOR), (ForFinalizer, _FINALIZER), 
+	for v, n in [(ForInitializer, _INITIALIZER), (ForExtractor, _EXTRACTOR),
+				(ForConsolidator, _CONSOLIDATOR), (ForFinalizer, _FINALIZER),
 				(ForFinalizerParallelIterations, _FINALIZER_PARALLEL_ITERATION),
 				(LimitedParallelConsolidator, _LIMITED_PARALLEL_CONSOLIDATOR) ]:
 		apply_arg(v, n)
@@ -122,8 +122,8 @@ class For(Parallel):
 
 	"""
 
-	def __init__(self, Name=None, Comment="", InputPath="$", OutputPath="$", NextState=None, EndState=None, 
-					ResultPath="$", RetryList=None, CatcherList=None, BranchState=None, BranchRetryList=None, 
+	def __init__(self, Name=None, Comment="", InputPath="$", OutputPath="$", NextState=None, EndState=False,
+					ResultPath="$", RetryList=None, CatcherList=None, BranchState=None, BranchRetryList=None,
 					From=0, To=0, Step=1, IteratorPath="$.iteration", ParallelIteration=False):
 		"""
 		Initializer for the ``For`` class
@@ -161,12 +161,12 @@ class For(Parallel):
 		:param ParallelIteration: [Optional] Whether the ``For`` branches can be run concurrently or must be executed sequentially.  Default is sequential.
 		:type ParallelIteration: bool
 
-		"""		
-		super(For, self).__init__(Name=Name, Comment=Comment, 
-			InputPath=InputPath, OutputPath=OutputPath, NextState=NextState, EndState=EndState, 
+		"""
+		super(For, self).__init__(Name=Name, Comment=Comment,
+			InputPath=InputPath, OutputPath=OutputPath, NextState=NextState, EndState=EndState,
 			ResultPath=ResultPath, RetryList=RetryList, CatcherList=CatcherList, BranchList=None)
 		self._branch_state = None
-		self._from = 0 
+		self._from = 0
 		self._to = 0
 		self._step = 1
 		self._iterator_path = None
@@ -288,8 +288,8 @@ class For(Parallel):
 		"""
 		Sets the starting value for the ``For`` loop.  Must be an integer or float.  Default value is zero.
 
-		:param From: [Required] The starting value of the iteration.  
-		:type From: int or float		
+		:param From: [Required] The starting value of the iteration.
+		:type From: int or float
 		"""
 		if not isinstance(From, (int, float)):
 			raise Exception("From must be either an int or a float (step '{}')".format(self.get_name()))
@@ -307,8 +307,8 @@ class For(Parallel):
 		"""
 		Sets the ending value for the ``For`` loop.  Must be an integer or float.  Default value is zero.
 
-		:param To: [Required] The ending value of the iteration.  
-		:type To: int or float		
+		:param To: [Required] The ending value of the iteration.
+		:type To: int or float
 		"""
 		if not isinstance(To, (int, float)):
 			raise Exception("To must be either an int or a float (step '{}')".format(self.get_name()))
@@ -326,8 +326,8 @@ class For(Parallel):
 		"""
 		Sets the increment value for the ``For`` loop.  Must be an integer or float.  Default value is 1.
 
-		:param Step: [Required] The increment value of the iteration.  
-		:type Step: int or float		
+		:param Step: [Required] The increment value of the iteration.
+		:type Step: int or float
 		"""
 		if not isinstance(Step, (int, float)):
 			raise Exception("Step must be either an int or a float (step '{}')".format(self.get_name()))
@@ -357,7 +357,7 @@ class For(Parallel):
 
 	def get_branch_retry_list(self):
 		"""
-		Returns the list of ``Retrier`` instances that will be applied separately to each ``For`` branch iteration, allowing failure 
+		Returns the list of ``Retrier`` instances that will be applied separately to each ``For`` branch iteration, allowing failure
 		in one branch iteration during the ``For`` loop to be retried without having to re-execute all the branches of the ``For``.
 
 		:returns: ``list`` of ``Retrier`` instances
@@ -416,7 +416,7 @@ class For(Parallel):
 		"""
 		Specifies whether the execution of the ``For`` loop can be performed concurrently, or must be sequential.  Default is sequential.
 
-		:param ParallelIteration: [Optional] Whether the ``For`` branches can be run concurrently or must be executed sequentially.  
+		:param ParallelIteration: [Optional] Whether the ``For`` branches can be run concurrently or must be executed sequentially.
 		:type ParallelIteration: bool
 		"""
 		self._parallel_iteration = ParallelIteration
@@ -426,7 +426,7 @@ class For(Parallel):
 		Validates this instance is correctly specified.
 
 		Raises ``Exception`` with details of the error, if the state is incorrectly defined.
-		
+
 		"""
 		self._build_for_loop()
 		super(For, self).validate()
@@ -436,7 +436,7 @@ class For(Parallel):
 		Returns the JSON representation of this instance.
 
 		:returns: dict -- The JSON representation
-		
+
 		"""
 		self._build_for_loop()
 		return super(For, self).to_json()
@@ -481,6 +481,6 @@ class For(Parallel):
 			c.set_catcher_list(CatcherList=[ c.clone(NameFormatString) for c in self.get_catcher_list() ])
 
 		if self.get_next_state():
-			c.set_next_state(NextState=self.get_next_state.clone(NameFormatString))	
+			c.set_next_state(NextState=self.get_next_state.clone(NameFormatString))
 
 		return c
