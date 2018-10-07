@@ -9,8 +9,8 @@ class StateRetryCatch(StateResult):
 		Task, Parallel
 	"""
 
-	def __init__(self, Name=None, Type=None, Comment="", InputPath="$", OutputPath="$", NextState=None, EndState=None, ResultPath="$", RetryList=None, CatcherList=None):
-		super(StateRetryCatch, self).__init__(Name=Name, Type=Type, Comment=Comment, 
+	def __init__(self, Name=None, Type=None, Comment="", InputPath="$", OutputPath="$", NextState=None, EndState=False, ResultPath="$", RetryList=None, CatcherList=None):
+		super(StateRetryCatch, self).__init__(Name=Name, Type=Type, Comment=Comment,
 			InputPath=InputPath, OutputPath=OutputPath, NextState=NextState, EndState=EndState, ResultPath=ResultPath)
 		self._retry_list = None
 		self._catcher_list = None
