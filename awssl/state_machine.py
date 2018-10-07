@@ -13,10 +13,12 @@ class StateMachine(object):
 	:type ASLVersion: str
 	:param StartState: [Required] The starting state for the start machine.  Must not be ``None``
 	:type StartState: any start class derived from ``StateBase``
+	:param TimeoutSeconds: [Optional] The maximum number of seconds the state machine is allowed to run
+	:type TimeoutSeconds: int
 
 	"""
 
-	def __init__(self, Comment="", ASLVersion="1.0", StartState=None):
+	def __init__(self, Comment="", ASLVersion="1.0", StartState=None, TimeoutSeconds=None):
 		"""
 		StateMachine that constructs the ASL compliant JSON by typing ``print``.
 
@@ -26,14 +28,18 @@ class StateMachine(object):
 		:type ASLVersion: str
 		:param StartState: [[Required]] The starting state for the start machine.  Must not be ``None``
 		:type StartState: any start class derived from ``StateBase``
+		:param TimeoutSeconds: [Optional] The maximum number of seconds the state machine is allowed to run
+		:type TimeoutSeconds: int
 
 		"""
 		self._comment = ""
 		self._asl_version = ""
 		self._branch = None
+		self._timeout_seconds = None
 		self.set_comment(Comment)
 		self.set_asl_version(ASLVersion)
 		self.set_start_state(StartState)
+		self.set_timeout_seconds(TimeoutSeconds)
 
 	def get_start_state(self):
 		"""
@@ -91,12 +97,33 @@ class StateMachine(object):
 		:param ASLVersion: [[Optional]] The version of the ASL specification.  Only 1.0 is currently supported
 		:type ASLVersion: str
 
-		"""		
+		"""
 		if not ASLVersion:
 			ASLVersion = "1.0"
 		if ASLVersion != "1.0":
 			raise Exception("Only version 1.0 of ASL is supported")
 		self._asl_version = ASLVersion
+
+	def get_timeout_seconds(self):
+		"""
+		Returns the maximum number of seconds the state machine is allowed to run.
+
+		:returns: int -- the maximum number of seconds allowed
+
+		"""
+		return self._timeout_seconds
+
+	def set_timeout_seconds(self, TimeoutSeconds):
+		"""
+		Sets the maximum number of seconds the state machine is allowed to run.
+
+		:param TimeoutSeconds: [[Optional]] The maximum number of seconds the state machine is allowed to run.
+		:type TimeoutSeconds: int
+
+		"""
+		if not isinstance(TimeoutSeconds, int):
+			raise Exception("TimeoutSeconds must be an int")
+		self._timeout_seconds = TimeoutSeconds
 
 	def __str__(self):
 		self.validate()
@@ -104,6 +131,8 @@ class StateMachine(object):
 		j = self._branch.to_json()
 		j["Comment"] = self.get_comment()
 		j["Version"] = self.get_asl_version()
+		if self.get_timeout_seconds() is not None:
+			j["TimeoutSeconds"] = self.get_timeout_seconds()
 
 		return dumps(j, sort_keys=True, indent=4)
 
@@ -112,7 +141,7 @@ class StateMachine(object):
 		Validates the state machine is correctly specified, compared to the version of the ASL being used.
 
 		Raises ``Exception`` with details of the error, if the state machine is incorrectly defined.
-		
+
 		"""
 		if not self._branch:
 			raise Exception("StartState must be specified for the StateMachine")
