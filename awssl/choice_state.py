@@ -7,7 +7,7 @@ from .or_choice_rule import OrChoiceRule
 
 class Choice(StateInputOutput):
 	"""
-	Models the Choice state, which allows multiple Choice Rules to be tested, and to redirect to the 
+	Models the Choice state, which allows multiple Choice Rules to be tested, and to redirect to the
 	state specified by the first Choice Rule that passes.
 
 	If no Choice Rules pass, then the State Machine redirects to the state specified as Default (if one)
@@ -54,7 +54,7 @@ class Choice(StateInputOutput):
 			choices.append(o.to_json())
 
 		j = super(Choice, self).to_json()
-		j["Choices"] = choices 
+		j["Choices"] = choices
 		if self.get_default():
 			j["Default"] = self.get_default().get_name()
 		return j
@@ -81,7 +81,7 @@ class Choice(StateInputOutput):
 		"""
 		if not NameFormatString:
 			raise Exception("NameFormatString must not be None (step '{}')".format(self.get_name()))
-		if not isinstance(NameFormatString, str):
+		if not isinstance(NameFormatString, basestring):
 			raise Exception("NameFormatString must be a str (step '{}')".format(self.get_name()))
 
 		c = Choice(
@@ -92,6 +92,6 @@ class Choice(StateInputOutput):
 			ChoiceList=[ c.clone(NameFormatString) for c in self.get_choice_list() ])
 
 		if self.get_default():
-			c.set_default(Default=self.get_default().clone(NameFormatString))	
+			c.set_default(Default=self.get_default().clone(NameFormatString))
 
 		return c

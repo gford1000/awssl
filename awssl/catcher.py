@@ -52,7 +52,7 @@ class Catcher(object):
 		if len(ErrorNameList) == 0:
 			raise Exception("ErrorNameList must be a non-empty list for a Catcher")
 		for o in ErrorNameList:
-			if not isinstance(o, str):
+			if not isinstance(o, basestring):
 				raise Exception("ErrorNameList must only contain strings")
 		self._error_name_list = ErrorNameList
 
@@ -81,7 +81,7 @@ class Catcher(object):
 		Validates this instance is correctly specified.
 
 		Raises ``Exception`` with details of the error, if the instance is incorrectly defined.
-		
+
 		"""
 		if not self.get_next_state():
 			raise Exception("Catcher must have a NextState")
@@ -93,7 +93,7 @@ class Catcher(object):
 		Returns the JSON representation of this instance.
 
 		:returns: dict -- The JSON representation
-		
+
 		"""
 		return {
 			"ErrorEquals" : self.get_error_name_list(),
@@ -114,7 +114,7 @@ class Catcher(object):
 		"""
 		if not NameFormatString:
 			raise Exception("NameFormatString must not be None (step '{}')".format(self.get_name()))
-		if not isinstance(NameFormatString, str):
+		if not isinstance(NameFormatString, basestring):
 			raise Exception("NameFormatString must be a str (step '{}')".format(self.get_name()))
 
 		cloned_error_name_list = None

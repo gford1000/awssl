@@ -128,7 +128,7 @@ class Task(StateRetryCatch):
 		"""
 		if not ResourceArn:
 			raise Exception("ResourceArn must be specified for Task state (step '{}')".format(self.get_name()))
-		if not isinstance(ResourceArn, str):
+		if not isinstance(ResourceArn, basestring):
 			raise Exception("ResourceArn must be a string for Task state (step '{}')".format(self.get_name()))
 		self._resource_arn = ResourceArn
 
@@ -196,7 +196,7 @@ class Task(StateRetryCatch):
 		"""
 		if not NameFormatString:
 			raise Exception("NameFormatString must not be None (step '{}')".format(self.get_name()))
-		if not isinstance(NameFormatString, str):
+		if not isinstance(NameFormatString, basestring):
 			raise Exception("NameFormatString must be a str (step '{}')".format(self.get_name()))
 
 		c = Task(

@@ -67,7 +67,7 @@ class Pass(StateResult):
 		Validates this instance is correctly specified.
 
 		Raises ``Exception`` with details of the error, if the state machine is incorrectly defined.
-		
+
 		"""
 		super(Pass, self).validate()
 
@@ -76,7 +76,7 @@ class Pass(StateResult):
 		Returns the JSON representation of this instance.
 
 		:returns: dict -- The JSON representation
-		
+
 		"""
 		j = super(Pass, self).to_json()
 		if self._result != None:
@@ -88,7 +88,7 @@ class Pass(StateResult):
 		Returns the JSON result of this instance.
 
 		:returns: dict -- The JSON representation
-		
+
 		"""
 		return self._result
 
@@ -98,7 +98,7 @@ class Pass(StateResult):
 
 		:param ResultAsJSON: [Optional] Data to be returned by this state, in JSON format.
 		:type ResultPath: dict
-		
+
 		"""
 		if ResultAsJSON and not isinstance(ResultAsJSON, (dict, list)):
 			raise Exception("ResultAsJSON must be valid JSON specification")
@@ -118,7 +118,7 @@ class Pass(StateResult):
 		"""
 		if not NameFormatString:
 			raise Exception("NameFormatString must not be None (step '{}')".format(self.get_name()))
-		if not isinstance(NameFormatString, str):
+		if not isinstance(NameFormatString, basestring):
 			raise Exception("NameFormatString must be a str (step '{}')".format(self.get_name()))
 
 		c = Pass(
@@ -131,6 +131,6 @@ class Pass(StateResult):
 			ResultAsJSON=self.get_result())
 
 		if self.get_next_state():
-			c.set_next_state(NextState=self.get_next_state.clone(NameFormatString))	
+			c.set_next_state(NextState=self.get_next_state.clone(NameFormatString))
 
 		return c

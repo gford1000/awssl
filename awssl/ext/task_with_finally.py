@@ -8,7 +8,7 @@ class TaskWithFinally(StateRetryCatchFinally):
 	as supporting Timeout for processing as one of those error types.
 
 	As its name suggests, ``TaskWithFinally`` also optionally allows an additional branch to be executed after a successful completion of the task,
-	or if any of the ``Catcher`` s are triggered by an error.  
+	or if any of the ``Catcher`` s are triggered by an error.
 
 	Note that the finally branch will not be executed if no ``Catcher`` traps the error, so it is recommended that a ``Catcher`` is
 	provided that traps ``States.ALL`` if the finally branch must always be executed.
@@ -47,7 +47,7 @@ class TaskWithFinally(StateRetryCatchFinally):
 
 	"""
 
-	def __init__(self, Name=None, Comment="", InputPath="$", OutputPath="$", NextState=None, EndState=None, 
+	def __init__(self, Name=None, Comment="", InputPath="$", OutputPath="$", NextState=None, EndState=None,
 					ResultPath="$", RetryList=None, CatcherList=None, FinallyState=None,
 					ResourceArn=None, TimeoutSeconds=99999999, HeartbeatSeconds=99999999):
 		"""
@@ -81,8 +81,8 @@ class TaskWithFinally(StateRetryCatchFinally):
 		:type: HeartbeatSeconds: int
 
 		"""
-		super(TaskWithFinally, self).__init__(Name=Name, Comment=Comment, 
-			InputPath=InputPath, OutputPath=OutputPath, NextState=NextState, EndState=EndState, 
+		super(TaskWithFinally, self).__init__(Name=Name, Comment=Comment,
+			InputPath=InputPath, OutputPath=OutputPath, NextState=NextState, EndState=EndState,
 			ResultPath=ResultPath, RetryList=RetryList, CatcherList=CatcherList, FinallyState=FinallyState)
 		self._resource_arn = None
 		self._timeout_seconds = None
@@ -112,11 +112,11 @@ class TaskWithFinally(StateRetryCatchFinally):
 		Sets the Arn of the Lambda of ``Activity`` to be invoked by this ``TaskWithFinally``.  Cannot be ``None`` and must be a valid Arn formatted string.
 
 		:param ResourceArn: [Required] The Arn for the ``Lambda`` function or ``Activity`` that the ``TaskWithFinally`` should invoke
-		:type: ResourceArn: str		
+		:type: ResourceArn: str
 		"""
 		if not ResourceArn:
 			raise Exception("ResourceArn must be specified for TaskWithFinally state (step '{}')".format(self.get_name()))
-		if not isinstance(ResourceArn, str):
+		if not isinstance(ResourceArn, basestring):
 			raise Exception("ResourceArn must be a string for TaskWithFinally state (step '{}')".format(self.get_name()))
 		self._resource_arn = ResourceArn
 		self._changed()
@@ -187,7 +187,7 @@ class TaskWithFinally(StateRetryCatchFinally):
 		"""
 		if not NameFormatString:
 			raise Exception("NameFormatString must not be None (step '{}')".format(self.get_name()))
-		if not isinstance(NameFormatString, str):
+		if not isinstance(NameFormatString, basestring):
 			raise Exception("NameFormatString must be a str (step '{}')".format(self.get_name()))
 
 		c = TaskWithFinally(
@@ -208,7 +208,7 @@ class TaskWithFinally(StateRetryCatchFinally):
 			c.set_catcher_list(CatcherList=[ c.clone(NameFormatString) for c in self.get_catcher_list() ])
 
 		if self.get_next_state():
-			c.set_next_state(NextState=self.get_next_state.clone(NameFormatString))	
+			c.set_next_state(NextState=self.get_next_state.clone(NameFormatString))
 
 		if self.get_finally_state():
 			c.set_finally_state(FinallyState=self.get_finally_state().clone(NameFormatString))

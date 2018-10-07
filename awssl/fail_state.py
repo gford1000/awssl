@@ -40,7 +40,7 @@ class Fail(StateBase):
 		Validates this instance is correctly specified.
 
 		Raises ``Exception`` with details of the error, if the state machine is incorrectly defined.
-		
+
 		"""
 		super(Fail, self).validate()
 
@@ -49,7 +49,7 @@ class Fail(StateBase):
 		Returns the JSON representation of this instance.
 
 		:returns: dict -- The JSON representation
-		
+
 		"""
 		j = super(Fail, self).to_json()
 		j["Error"] = self.get_error_name()
@@ -72,7 +72,7 @@ class Fail(StateBase):
 		:type ErrorName: str
 
 		"""
-		if not isinstance(ErrorName, str):
+		if not isinstance(ErrorName, basestring):
 			raise Exception("ErrorName must be a valid string")
 		self._error_name = ErrorName
 
@@ -90,9 +90,9 @@ class Fail(StateBase):
 
 		:param ErrorCause: [Optional] More detailed information on the cause of the error
 		:type ErrorCause: str
-		
+
 		"""
-		if not isinstance(ErrorCause, str):
+		if not isinstance(ErrorCause, basestring):
 			raise Exception("ErrorCause must be a valid string")
 		self._error_cause = ErrorCause
 
@@ -110,7 +110,7 @@ class Fail(StateBase):
 		"""
 		if not NameFormatString:
 			raise Exception("NameFormatString must not be None (step '{}')".format(self.get_name()))
-		if not isinstance(NameFormatString, str):
+		if not isinstance(NameFormatString, basestring):
 			raise Exception("NameFormatString must be a str (step '{}')".format(self.get_name()))
 
 		c = Fail(
@@ -120,4 +120,3 @@ class Fail(StateBase):
 			ErrorCause=self.get_error_cause())
 
 		return c
-

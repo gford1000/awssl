@@ -56,16 +56,15 @@ class NotChoiceRule(object):
 		"""
 		if not NameFormatString:
 			raise Exception("NameFormatString must not be None (step '{}')".format(self.get_name()))
-		if not isinstance(NameFormatString, str):
+		if not isinstance(NameFormatString, basestring):
 			raise Exception("NameFormatString must be a str (step '{}')".format(self.get_name()))
 
 		c = NotChoiceRule()
 
 		if self.get_comparison():
-			c.set_comparison(Comparison=self.get_comparison().clone())	
+			c.set_comparison(Comparison=self.get_comparison().clone())
 
 		if self.get_next_state():
 			c.set_next_state(NextState=self.get_next_state().clone(NameFormatString))
 
 		return c
-
